@@ -4,23 +4,25 @@ Calculate how many trips you need to make to move a given number of boxes with a
 
 # How it works
 
-## Simple main class 
+## Main 
 
-The user is prompted the number of boxes and the capacity of the truck used ot move
+Main instanciate an object of the moving class then use the move function
 
-Then program checks if the input are both positive integers
+## Moving
 
-If both check succeed the program enter a loop till the number of boxes is 0
+Upon creation moving asks the use to input the number of boxes and the capacity of the truck through the class scanner and put the input in its attribute truck and boxes
 
-On each iteration the number of boxes is reduced by the truck capacity unless it is bigger in that
-case the number of boxes is set to 0. Then we increase the number to track the number of trip
+When using move() the function returns the number of trips needed to move all the boxes
 
-After the loop is done we print what has been done:
-Number of boxes moved by the truck
-Which trip that was
-Number of boxes remaining
+## Truck/Boxes
+
+Are classes only having an int
 
 ## Requirement 
 
 To run this you need jre
 
+then do 
+```
+java -jar moving.jar
+```
