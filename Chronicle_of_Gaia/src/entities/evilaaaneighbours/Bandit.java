@@ -1,19 +1,25 @@
 package entities.evilaaaneighbours;
 
-import entities.Character;
+import crawlinmydungeon.enums.Stat;
+import entities.Creature;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Bandit extends Character {
+public class Bandit extends Creature {
     public Bandit() {
-        Map<String, Integer> stats = new HashMap<String, Integer>();
-        stats.put("STR", 11);
-        stats.put("DEX", 12);
-        stats.put("CON", 12);
-        stats.put("INT", 10);
-        stats.put("WIS", 10);
-        stats.put("CHA", 10);
+        Map<Stat, Integer> stats = new EnumMap<>(Stat.class);
+        stats.put(Stat.STR, 11);
+        stats.put(Stat.DEX, 12);
+        stats.put(Stat.CON, 12);
+        stats.put(Stat.INT, 10);
+        stats.put(Stat.WIS, 10);
+        stats.put(Stat.CHA, 10);
         super(11,  12, "Bandit", stats);
+    }
+    @Override
+    public String getTypeName() {
+        return "Bandit";
     }
 }

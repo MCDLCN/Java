@@ -1,12 +1,25 @@
 package entities.classes;
 
-import entities.Character;
+import crawlinmydungeon.enums.Stat;
+import entities.Creature;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class Warrior extends Character {
-    public Warrior(int HP, String name, Map<String, Integer> stats) {
+public class Warrior extends Creature {
+    public Warrior(int HP, String name, Map<Stat, Integer> stats) {
         super(HP, 10, name, stats);
+        this.setMaxHp(this.calculateHP());
+    }
+    @Override
+    public String getTypeName() {
+        return "Warrior";
+    }
+
+    protected int getMaxHitDie() {
+        return 10;
+    }
+
+    protected int calculateHP(){
+        return this.getStatModifier(Stat.CON)+this.getMaxHitDie();
     }
 }

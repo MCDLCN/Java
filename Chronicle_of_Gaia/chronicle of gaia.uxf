@@ -1,0 +1,56 @@
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>330</x><y>40</y><w>210</w><h>130</h></coordinates><panel_attributes>Board
+--
+#board: Object[]
+#position: int
+--
++Board()
+#fill(): void
+#moving(roll: int): Object
+#emptyCurrent(): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>630</x><y>80</y><w>210</w><h>100</h></coordinates><panel_attributes>Game
+--
+-board: Board
+#creature: Character
+--
++Game()
+#characterCreation(): Character</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>900</x><y>80</y><w>210</w><h>100</h></coordinates><panel_attributes>Dice
+--
+-random: Random {static}
+-sides: int
+--
++Dice(sides: int)
++roll(): int</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>270</y><w>400</w><h>250</h></coordinates><panel_attributes>&lt;&lt;abstract&gt;&gt;
+Character
+--
+-stats: Map&lt;String,Integer&gt;
+-hp: int
+-maxHp: int
+-ac: int
+-name: String
+--
++Character(hp: int, ac: int, name: String, stats: Map&lt;String,Integer&gt;)
++getHp(): int
++getMaxHp(): int
++getAc(): int
++getName(): String
++getStats(): Map&lt;String,Integer&gt;
+-healthChange(change: int): void
++setAc(armor: Armour...): void</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>880</x><y>350</y><w>340</w><h>50</h></coordinates><panel_attributes>Wizard
+--
+--
++Wizard(HP: int, name: String, stats: Map&lt;String,Integer&gt;)</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>880</x><y>260</y><w>340</w><h>50</h></coordinates><panel_attributes>Warrior
+--
+--
++Warrior(HP: int, name: String, stats: Map&lt;String,Integer&gt;)</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>160</x><y>260</y><w>210</w><h>60</h></coordinates><panel_attributes>Goblin
+--
+--
++Goblin()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>160</x><y>350</y><w>210</w><h>60</h></coordinates><panel_attributes>Bandit
+--
+--
++Bandit()</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>600</x><y>590</y><w>360</w><h>110</h></coordinates><panel_attributes>Armour
+--
+ac: int
+name: String
+description: String
+type: enum {LIGHT, MEDIUM, HEAVY}
+--
++Armour(ac: int, name: String, description: String, type: String)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>810</x><y>350</y><w>90</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;70;10</additional_attributes></element><element><id>Relation</id><coordinates><x>810</x><y>280</y><w>90</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;70;10</additional_attributes></element><element><id>Relation</id><coordinates><x>360</x><y>280</y><w>80</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>60;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>360</x><y>380</y><w>80</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>60;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>530</x><y>130</y><w>120</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-</panel_attributes><additional_attributes>100;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>720</x><y>170</y><w>30</w><h>120</h></coordinates><panel_attributes></panel_attributes><additional_attributes>10;10;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>780</x><y>510</y><w>30</w><h>100</h></coordinates><panel_attributes></panel_attributes><additional_attributes>10;10;10;80</additional_attributes></element><element><id>Relation</id><coordinates><x>340</x><y>160</y><w>30</w><h>120</h></coordinates><panel_attributes></panel_attributes><additional_attributes>10;10;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>830</x><y>100</y><w>90</w><h>40</h></coordinates><panel_attributes></panel_attributes><additional_attributes>10;20;70;20</additional_attributes></element></diagram>

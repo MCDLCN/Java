@@ -1,11 +1,16 @@
 package entities.classes;
 
-import entities.Character;
+import crawlinmydungeon.enums.Stat;
+import entities.Creature;
 
 import java.util.Map;
 
-public class Wizard extends Character {
-    public Wizard(int HP, String name, Map<String, Integer> stats) {
+public class Wizard extends Creature {
+    public Wizard(int HP, String name, Map<Stat, Integer> stats) {
         super(HP, 10, name, stats);
+    }
+    @Override
+    public String getTypeName() {
+        return "Wizard";
     }
 }

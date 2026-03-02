@@ -1,4 +1,4 @@
-package crawlinmydungeon;
+package crawlinmydungeon.dice;
 
 import java.util.Random;
 
@@ -12,5 +12,9 @@ public class Dice {
 
     public int roll() {
         return random.nextInt(1,sides+1);
+    }
+
+    public static int roll(int sides) {
+        return random.nextInt(sides) + 1;
     }
 }
