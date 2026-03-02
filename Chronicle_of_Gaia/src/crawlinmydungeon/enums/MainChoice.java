@@ -1,5 +1,8 @@
 package crawlinmydungeon.enums;
 
+/**
+ * Main choice enum.
+ */
 public enum MainChoice {
     CREATE_CHARACTER,
     DISPLAY_CHARACTER,

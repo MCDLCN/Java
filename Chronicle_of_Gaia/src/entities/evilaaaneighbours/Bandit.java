@@ -4,10 +4,15 @@ import crawlinmydungeon.enums.Stat;
 import entities.Creature;
 
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Bandit class.
+ */
 public class Bandit extends Creature {
+    /**
+     * Bandit.
+     */
     public Bandit() {
         Map<Stat, Integer> stats = new EnumMap<>(Stat.class);
         stats.put(Stat.STR, 11);
@@ -19,6 +24,11 @@ public class Bandit extends Creature {
         super(11,  12, "Bandit", stats);
     }
     @Override
+    /**
+     * Get type name.
+     *
+     * @return result.
+     */
     public String getTypeName() {
         return "Bandit";
     }

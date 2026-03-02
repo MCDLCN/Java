@@ -2,7 +2,6 @@ package crawlinmydungeon;
 
 import Utilities.Console;
 import crawlinmydungeon.dice.Dice;
-import crawlinmydungeon.enums.CharacterMenuChoice;
 import crawlinmydungeon.enums.CharacterType;
 import crawlinmydungeon.enums.MainChoice;
 import crawlinmydungeon.enums.Stat;
@@ -12,7 +11,6 @@ import entities.classes.Wizard;
 import tile.Tile;
 
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,12 +26,21 @@ public class Game {
      */
     protected Creature player;
 
+    /**
+     * Menu.
+     */
     private Menu menu;
 
+    /**
+     * Game.
+     */
     public Game() {
         this.menu = new Menu();
     }
 
+    /**
+     * Start.
+     */
     public void start() {
         boolean running = true;
 
@@ -50,6 +57,9 @@ public class Game {
         }
     }
 
+    /**
+     * Create character.
+     */
     private void createCharacter() {
         CharacterType type = menu.askCharacterType();
         String name = menu.askName();
@@ -66,6 +76,13 @@ public class Game {
     }
 
 
+    /**
+     * Point buy stats.
+     *
+     * @param menu menu.
+     *
+     * @return result.
+     */
     private Map<Stat, Integer> pointBuyStats(Menu menu) {
         final int budget = 27;
 
@@ -104,6 +121,13 @@ public class Game {
         }
     }
 
+    /**
+     * Point buy cost.
+     *
+     * @param score score.
+     *
+     * @return result.
+     */
     private int pointBuyCost(int score) {
         return switch (score) {
             case 8  -> 0;
@@ -118,6 +142,9 @@ public class Game {
         };
     }
 
+    /**
+     * Display character.
+     */
     private void displayCharacter() {
         if (player == null) {
             menu.showMessage("No character created yet.");
@@ -126,6 +153,9 @@ public class Game {
         menu.showMessage(player.toString());
     }
     
+    /**
+     * Edit character name.
+     */
     private void editCharacterName() {
         if (player == null) {
             menu.showMessage("No character created yet.");
@@ -136,27 +166,39 @@ public class Game {
         menu.showMessage("Name updated.");
     }
 
+    /**
+     * Modify character.
+     */
     private void modifyCharacter() {
         String newName = menu.askName();
         player.setName(newName);
     }
 
+    /**
+     * Play.
+     */
     public void play() {
         Dice mainRoll = new Dice(8);
         this.board = new Board();
         while (true) {
-            if (this.board.getPosition() == 64){
+            Console.print("Time to roll!", Console.ConsoleColor.GREEN);
+            int roll = mainRoll.roll();
+            try {
+                Tile tile = board.moving(roll);
+                if (board.getPosition() == board.getLastTileIndex()) {
+                    System.out.println(player.getName() + " wins!");
+                    break;
+                }
+                tile.onEnter(player);
+            } catch (Board.OutOfBoardException e) {
                 Console.print("You reached the end, congratulation", Console.ConsoleColor.BRIGHT_PURPLE);
                 break;
             }
-            else {
-                Console.print("Time to roll!", Console.ConsoleColor.GREEN);
-                int roll = mainRoll.roll();
-                Tile tile = board.moving(roll);
-                Console.print("You rolled a "+roll+" and landed on tile n° "+this.board.getPosition(), Console.ConsoleColor.BRIGHT_PURPLE);
-                Console.print(tile.describe(), Console.ConsoleColor.CYAN);
-                tile.onEnter(player);
-            }
+            Tile tile = board.moving(roll);
+            Console.print("You rolled a "+roll+" and landed on tile n° "+this.board.getPosition(), Console.ConsoleColor.BRIGHT_PURPLE);
+            Console.print(tile.describe(), Console.ConsoleColor.CYAN);
+            tile.onEnter(player);
+
         }
     }
 

@@ -1,7 +1,13 @@
 package Utilities;
 
+/**
+ * Console class.
+ */
 public class Console {
 
+    /**
+     * Console color enum.
+     */
     public enum ConsoleColor {
 
         // Reset
@@ -59,14 +65,34 @@ public class Console {
         BG_BRIGHT_BLUE("\u001B[104m"),
         BG_BRIGHT_PURPLE("\u001B[105m"),
         BG_BRIGHT_CYAN("\u001B[106m"),
+        /**
+         * Bg bright white.
+         *
+         * @param "\u001B[107m" u 001 b 107 m.
+         *
+         * @return result.
+         */
         BG_BRIGHT_WHITE("\u001B[107m");
 
+        /**
+         * Code.
+         */
         private final String code;
 
+        /**
+         * Console color.
+         *
+         * @param code code.
+         */
         ConsoleColor(String code) {
             this.code = code;
         }
 
+        /**
+         * Get code.
+         *
+         * @return result.
+         */
         public String getCode() {
             return code;
         }

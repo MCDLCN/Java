@@ -1,10 +1,8 @@
 package entities;
 
-import Utilities.Console;
 import crawlinmydungeon.enums.Stat;
-import items.armours.Armour;
+import items.defensives.Armour;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -53,22 +51,49 @@ public abstract class Creature {
         return hp;
     }
 
+    /**
+     * Get max hp.
+     *
+     * @return result.
+     */
     public int getMaxHp() {
         return maxHp;
     }
 
+    /**
+     * Get ac.
+     *
+     * @return result.
+     */
     public int getAc() {
         return ac;
     }
 
+    /**
+     * Get name.
+     *
+     * @return result.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Get stats.
+     *
+     * @return result.
+     */
     public Map<Stat, Integer> getStats() {
         return stats;
     }
 
+    /**
+     * Get one stat.
+     *
+     * @param stat stat.
+     *
+     * @return result.
+     */
     public int getOneStat(Stat stat){
         return  stats.get(stat);
     }
@@ -100,14 +125,30 @@ public abstract class Creature {
         }
     }
 
+    /**
+     * Set max hp.
+     *
+     * @param maxHp max hp.
+     */
     public void setMaxHp(int maxHp) {
         this.maxHp = maxHp;
     }
 
+    /**
+     * Set stats.
+     *
+     * @param stats stats.
+     */
     public void setStats(Map<Stat, Integer> stats) {
         this.stats = stats;
     }
 
+    /**
+     * Set one stat.
+     *
+     * @param stat stat.
+     * @param value value.
+     */
     public void setOneStat(Stat stat, int value) {
         this.stats.put(stat, value);
     }
@@ -138,14 +179,29 @@ public abstract class Creature {
         return (value - 10) / 2;
     }
 
+    /**
+     * Set name.
+     *
+     * @param newName new name.
+     */
     public void setName(String newName) {
         this.name = newName;
     }
 
+    /**
+     * Get type name.
+     *
+     * @return result.
+     */
     public abstract String getTypeName();
 
     @Override
+    /**
+     * To string.
+     *
+     * @return result.
+     */
     public String toString(){
-        return "You are a "+this.getTypeName()+" your name's "+this.getName();
+        return "Creature: "+this.getTypeName()+"\n HP: "+this.getHp()+"/"+this.getMaxHp();
     }
 }

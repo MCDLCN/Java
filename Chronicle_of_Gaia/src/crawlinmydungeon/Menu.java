@@ -1,17 +1,33 @@
 package crawlinmydungeon;
 
 import Utilities.Console;
-import crawlinmydungeon.enums.CharacterMenuChoice;
 import crawlinmydungeon.enums.CharacterType;
 import crawlinmydungeon.enums.MainChoice;
 
 import java.util.Scanner;
 
+/**
+ * Menu class.
+ */
 public class Menu {
 
+    /**
+     * Scanner.
+     *
+     * @param System.in system in.
+     *
+     * @return result.
+     */
     private final Scanner scanner = new Scanner(System.in);
     
 
+    /**
+     * Show main menu.
+     *
+     * @param hasCharacter has character.
+     *
+     * @return result.
+     */
     public MainChoice showMainMenu(boolean hasCharacter) {
         Console.print("\n=== Main Menu ===");
         Console.print("1) Create character");
@@ -46,20 +62,39 @@ public class Menu {
     }
 
 
+    /**
+     * Ask character type.
+     *
+     * @return result.
+     */
     public CharacterType askCharacterType() {
         Console.print("\nChoose a class:");
         Console.print("1) Warrior");
-        Console.print("2) Magician");
+        Console.print("2) Wizard");
         int choice = askInt("Choice: ", 1, 2);
-        return choice == 1 ? CharacterType.WARRIOR : CharacterType.MAGICIAN;
+        return choice == 1 ? CharacterType.WARRIOR : CharacterType.WIZARD;
     }
 
+    /**
+     * Ask name.
+     *
+     * @return result.
+     */
     public String askName() {
         Console.print("Enter name: ");
         return scanner.nextLine();
     }
 
 
+    /**
+     * Ask int.
+     *
+     * @param prompt prompt.
+     * @param min min.
+     * @param max max.
+     *
+     * @return result.
+     */
     public int askInt(String prompt, int min, int max) {
         while (true) {
             Console.print(prompt);
@@ -74,6 +109,11 @@ public class Menu {
         }
     }
 
+    /**
+     * Show message.
+     *
+     * @param message message.
+     */
     public void showMessage(String message) {
         Console.print(message);
     }

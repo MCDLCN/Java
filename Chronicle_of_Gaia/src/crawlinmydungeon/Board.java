@@ -7,21 +7,28 @@ import tile.EnemyTile;
 import tile.Tile;
 
 import java.util.concurrent.ThreadLocalRandom;
+
 /**
- * This is where the board will be handled
+ * Represents the dungeon board.
+ * <p>
+ * The board is composed of {@link Tile} elements randomly generated at
+ * instantiation. It also manages the player's current position
+ * and movement logic.
  */
 public class Board {
+
     /**
-     * This is our board
+     * The array representing the dungeon tiles.
      */
-    private Tile[] board;;
+    private Tile[] board;
+
     /**
-     * Current position
+     * The current position of the player on the board.
      */
     private int position;
 
     /**
-     * Constructor for the board. It'll immediately run the filling
+     * Constructs a new board of 65 tiles and fills it randomly.
      */
     public Board() {
         this.board = new Tile[65];
@@ -30,47 +37,86 @@ public class Board {
     }
 
     /**
-     * This will fill at random the board of this instance
+     * Randomly fills the board with tiles.
+     * <ul>
+     *     <li>50% chance: {@link EnemyTile}</li>
+     *     <li>25% chance: {@link ChestTile}</li>
+     *     <li>25% chance: {@link EmptyTile}</li>
+     * </ul>
      */
     public void fill() {
-        for  (int i = 0; i < 65; i++) {
+        for (int i = 0; i < board.length; i++) {
             int randomNum = ThreadLocalRandom.current().nextInt(1, 101);
+
             if (randomNum < 51) {
                 board[i] = new EnemyTile(new Goblin());
-            }
-            else if (randomNum < 76) {
+            } else if (randomNum < 76) {
                 board[i] = new ChestTile();
-            }
-            else {
+            } else {
                 board[i] = new EmptyTile();
             }
         }
     }
 
     /**
-     * This first check that our movement won't make us go back in case the player is fleeing
-     * then that we don't go out of the board if rolling more than the max
-     * @param roll this is the movement of the character, usually by rolling
-     * @return it returns what's on that tile
+     * Moves the player forward or backward on the board.
+     *
+     * @param roll the number of tiles to move
+     * @return the {@link Tile} reached after movement
+     * @throws OutOfBoardException if the movement exceeds the board size
+     * @throws IllegalStateException if the resulting position is negative
      */
     protected Tile moving(int roll) {
+
         int newPos = this.position + roll;
 
-        if (newPos < 0) newPos = 0;
-        if (newPos >= this.board.length) newPos = this.board.length - 1;
+
+        if (newPos > board.length) {
+            throw new OutOfBoardException("You rolled past the final tile!");
+        }
+
+        if (newPos < 0) {
+            throw new IllegalStateException("Position cannot be negative.");
+        }
 
         this.position = newPos;
         return this.board[this.position];
     }
 
     /**
-     * If the tile has been cleared we make sure the player cannot meet that encounter again
+     * Replaces the current tile with an {@link EmptyTile}.
+     * <p>
+     * Used after an encounter has been cleared to prevent repetition.
      */
-    public void emptyCurrent(){
+    public void emptyCurrent() {
         this.board[this.position] = new EmptyTile();
     }
-    
-    public int getPosition(){
+
+    /**
+     * Returns the current position of the player.
+     *
+     * @return the player’s position index
+     */
+    public int getPosition() {
         return this.position;
+    }
+
+    /**
+     * Exception thrown when a movement exceeds the last tile,
+     * usually indicating a victory condition.
+     */
+    public class OutOfBoardException extends RuntimeException {
+        /**
+         * Out of board exception.
+         *
+         * @param message message.
+         */
+        public OutOfBoardException(String message) {
+            super(message);
+        }
+    }
+
+    public int getLastTileIndex(){
+        return board.length-1;
     }
 }
