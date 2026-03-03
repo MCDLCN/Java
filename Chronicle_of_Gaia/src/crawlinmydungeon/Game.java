@@ -32,6 +32,11 @@ public class Game {
     private Menu menu;
 
     /**
+     * Player position
+     */
+    private int playerPosition;
+
+    /**
      * Creates a new Game instance.
      */
     public Game() {
@@ -175,26 +180,32 @@ public class Game {
      */
     public void play() {
         Dice mainRoll = new Dice(8);
-        this.board = new Board();
+        this.playerPosition = 0;
+        this.board = new Board(64);
         while (true) {
             menu.showMessage("Time to roll!", Console.ConsoleColor.GREEN);
             int roll = mainRoll.roll();
+
             try {
-                Tile tile = board.moving(roll);
-                if (board.getPosition() == board.getLastTileIndex()) {
+                playerPosition = board.moving(playerPosition, roll);
+
+                if (playerPosition == board.getLastTileIndex()) {
                     menu.showMessage(player.getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
                     break;
                 }
+
+                Tile tile = board.getTile(playerPosition);
+
+                menu.showMessage("You rolled a " + roll + " and landed on tile n° " + playerPosition,
+                        Console.ConsoleColor.BRIGHT_PURPLE);
+                menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
+
                 tile.onEnter(player);
+
             } catch (Board.OutOfBoardException e) {
-                menu.showMessage("You reached the end, congratulation", Console.ConsoleColor.BRIGHT_PURPLE);
+                menu.showMessage(player.getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
                 break;
             }
-            Tile tile = board.moving(roll);
-            menu.showMessage("You rolled a "+roll+" and landed on tile n° "+this.board.getPosition(), Console.ConsoleColor.BRIGHT_PURPLE);
-            menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
-            tile.onEnter(player);
-
         }
     }
 

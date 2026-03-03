@@ -6,6 +6,7 @@ import tile.EmptyTile;
 import tile.EnemyTile;
 import tile.Tile;
 
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -16,35 +17,61 @@ public class Board {
     /**
      * Dungeon board instance containing tiles and current position.
      */
-    private Tile[] board;
+    private final ArrayList<Tile> board;
 
-    /**
-     * Current zero-based position of the player on the board.
-     */
-    private int position;
 
     /**
      * Creates a new Board instance.
      */
-    public Board() {
-        this.board = new Tile[64];
-        this.position = 0;
-        this.fill();
+    public Board(int size) {
+        this.board = new ArrayList<>(size);
+
+        for (int i = 0; i < size; i++) {
+            board.add(new EmptyTile());
+        }
+
+        fill();
+    }
+
+    /**
+     * Returns the index of the final tile on the board.
+     * @return Requested value.
+     */
+    public int getLastTileIndex() {
+        return board.size() - 1;
+    }
+
+    /**
+     * Return the value of the tile
+     * @param position the position where we retrieve the tile
+     * @return the value of the tile at position
+     */
+    public Tile getTile(int position) {
+        return board.get(position);
+    }
+
+    /**
+     * Set the tile
+     * @param position the position where we set the tile
+     * @param tile the tile that'll be assigned at the position
+     */
+    public void setTile(int position, Tile tile) {
+        board.set(position, tile);
     }
 
     /**
      * Populates the board with randomly selected tiles (enemies, chests, or empty tiles).
      */
     public void fill() {
-        for (int i = 0; i < board.length; i++) {
+        for (int i = 0; i < board.size(); i++) {
             int randomNum = ThreadLocalRandom.current().nextInt(1, 101);
 
             if (randomNum < 51) {
-                board[i] = new EnemyTile(new Goblin());
+                board.set(i,new EnemyTile(new Goblin()));
             } else if (randomNum < 76) {
-                board[i] = new ChestTile();
+                board.set(i,new ChestTile());
             } else {
-                board[i] = new EmptyTile();
+                board.set(i,new EmptyTile());
             }
         }
     }
@@ -52,14 +79,14 @@ public class Board {
     /**
      * Applies a movement to the board position and returns the tile landed on. Overshooting the end throws an exception treated as a win condition by the game loop.
      * @param roll roll value.
+     * @param currentPosition the current position of the player(s)
      * @return New board position.
      */
-    protected Tile moving(int roll) {
+    protected int moving(int currentPosition, int roll) {
+        int newPos = currentPosition + roll;
 
-        int newPos = this.position + roll;
-
-
-        if (newPos > board.length) {
+        // overshoot = win via exception (your rule)
+        if (newPos > getLastTileIndex()) {
             throw new OutOfBoardException("You rolled past the final tile!");
         }
 
@@ -67,23 +94,15 @@ public class Board {
             throw new IllegalStateException("Position cannot be negative.");
         }
 
-        this.position = newPos;
-        return this.board[this.position];
+        return newPos;
     }
 
     /**
      * Replaces the tile at the current position with an EmptyTile after it has been cleared.
+     * @param position the position where we empty the tile
      */
-    public void emptyCurrent() {
-        this.board[this.position] = new EmptyTile();
-    }
-
-    /**
-     * getPosition operation.
-     * @return Requested value.
-     */
-    public int getPosition() {
-        return this.position;
+    public void emptyAt(int position) {
+        board.set(position, new EmptyTile());
     }
 
     /**
@@ -95,11 +114,5 @@ public class Board {
         }
     }
 
-    /**
-     * Returns the index of the final tile on the board.
-     * @return Requested value.
-     */
-    public int getLastTileIndex(){
-        return board.length-1;
-    }
+
 }
