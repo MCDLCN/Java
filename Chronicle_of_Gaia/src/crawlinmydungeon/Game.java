@@ -14,32 +14,32 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * This will be the game's logic
+ * Coordinates the main game loop: character creation, menu navigation, and board traversal. A game is won by landing exactly on the final tile or by rolling beyond it (handled via an exception).
  */
 public class Game {
     /**
-     * The board where we'll play
+     * Board instance containing tiles and current position.
      */
     private Board board;
     /**
-     * This is the player
+     * Current player character controlled by the user.
      */
     protected Creature player;
 
     /**
-     * Menu.
+     * Menu handler responsible for user interaction via the console.
      */
     private Menu menu;
 
     /**
-     * Game.
+     * Creates a new Game instance.
      */
     public Game() {
         this.menu = new Menu();
     }
 
     /**
-     * Start.
+     * Runs the main menu loop until the user chooses to quit.
      */
     public void start() {
         boolean running = true;
@@ -58,7 +58,7 @@ public class Game {
     }
 
     /**
-     * Create character.
+     * Creates a new player character using menu prompts and point-buy stats.
      */
     private void createCharacter() {
         CharacterType type = menu.askCharacterType();
@@ -77,11 +77,9 @@ public class Game {
 
 
     /**
-     * Point buy stats.
-     *
-     * @param menu menu.
-     *
-     * @return result.
+     * Point buy system
+     * @param menu the menu used to handle the system
+     * @return the stat map after successful assignment
      */
     private Map<Stat, Integer> pointBuyStats(Menu menu) {
         final int budget = 27;
@@ -122,11 +120,9 @@ public class Game {
     }
 
     /**
-     * Point buy cost.
-     *
-     * @param score score.
-     *
-     * @return result.
+     * Returns the point-buy cost for a given stat value.
+     * @param score score value.
+     * @return Result value.
      */
     private int pointBuyCost(int score) {
         return switch (score) {
@@ -143,7 +139,7 @@ public class Game {
     }
 
     /**
-     * Display character.
+     * Displays the current character summary and key stats.
      */
     private void displayCharacter() {
         if (player == null) {
@@ -154,7 +150,7 @@ public class Game {
     }
     
     /**
-     * Edit character name.
+     * Prompts for and applies a new character name.
      */
     private void editCharacterName() {
         if (player == null) {
@@ -167,7 +163,7 @@ public class Game {
     }
 
     /**
-     * Modify character.
+     * modifyCharacter operation.
      */
     private void modifyCharacter() {
         String newName = menu.askName();
@@ -175,28 +171,28 @@ public class Game {
     }
 
     /**
-     * Play.
+     * Runs the core board traversal loop. Each turn rolls movement, advances the board position, and triggers the tile effect. The game ends when the player reaches or overshoots the final tile (overshoot is represented by an exception).
      */
     public void play() {
         Dice mainRoll = new Dice(8);
         this.board = new Board();
         while (true) {
-            Console.print("Time to roll!", Console.ConsoleColor.GREEN);
+            menu.showMessage("Time to roll!", Console.ConsoleColor.GREEN);
             int roll = mainRoll.roll();
             try {
                 Tile tile = board.moving(roll);
                 if (board.getPosition() == board.getLastTileIndex()) {
-                    System.out.println(player.getName() + " wins!");
+                    menu.showMessage(player.getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
                     break;
                 }
                 tile.onEnter(player);
             } catch (Board.OutOfBoardException e) {
-                Console.print("You reached the end, congratulation", Console.ConsoleColor.BRIGHT_PURPLE);
+                menu.showMessage("You reached the end, congratulation", Console.ConsoleColor.BRIGHT_PURPLE);
                 break;
             }
             Tile tile = board.moving(roll);
-            Console.print("You rolled a "+roll+" and landed on tile n° "+this.board.getPosition(), Console.ConsoleColor.BRIGHT_PURPLE);
-            Console.print(tile.describe(), Console.ConsoleColor.CYAN);
+            menu.showMessage("You rolled a "+roll+" and landed on tile n° "+this.board.getPosition(), Console.ConsoleColor.BRIGHT_PURPLE);
+            menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
             tile.onEnter(player);
 
         }

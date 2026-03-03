@@ -3,15 +3,14 @@ package items.offensives;
 import crawlinmydungeon.dice.DamageDice;
 
 /**
- * Weapon class.
+ * Offensive equipment item that contributes to damage output.
  */
-public class Weapon extends OffensiveEquipement{
+public class Weapon extends OffensiveEquipment {
 
     /**
-     * Weapon.
-     *
-     * @param name name.
-     * @param damage damage.
+     * Creates a new Weapon instance.
+     * @param name name value.
+     * @param damage damage value.
      */
     public Weapon(String name, DamageDice damage) {
         super(name, damage);

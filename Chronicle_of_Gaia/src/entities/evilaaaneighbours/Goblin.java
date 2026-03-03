@@ -7,11 +7,11 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Goblin class.
+ * A basic enemy creature used for early encounters.
  */
 public class Goblin extends Creature {
     /**
-     * Goblin.
+     * Creates a new Goblin instance.
      */
     public Goblin() {
         Map<Stat, Integer> stats = new EnumMap<>(Stat.class);
@@ -25,12 +25,11 @@ public class Goblin extends Creature {
     }
 
 
-    @Override
     /**
-     * Get type name.
-     *
-     * @return result.
+     * Returns the display name of this creature type/class.
+     * @return Requested value.
      */
+    @Override
     public String getTypeName() {
         return "Goblin";
     }

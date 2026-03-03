@@ -1,7 +1,7 @@
 package crawlinmydungeon.enums;
 
 /**
- * Main choice enum.
+ * Top-level menu choices available to the player.
  */
 public enum MainChoice {
     CREATE_CHARACTER,

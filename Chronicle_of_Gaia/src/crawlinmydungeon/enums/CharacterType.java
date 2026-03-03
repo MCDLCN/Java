@@ -1,7 +1,7 @@
 package crawlinmydungeon.enums;
 
 /**
- * Character type enum.
+ * Selectable player character classes.
  */
 public enum CharacterType {
     WARRIOR,

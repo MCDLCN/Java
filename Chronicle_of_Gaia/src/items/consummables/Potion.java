@@ -3,29 +3,28 @@ package items.consummables;
 import crawlinmydungeon.dice.DamageDice;
 
 /**
- * Potion class.
+ * Consumable item intended to be stored in inventory and consumed later for an effect such as healing or damage.
  */
 public abstract class Potion {
 
     /**
-     * Name.
+     * Display name of the creature.
      */
     private final String name;
     /**
-     * Uses remaining.
+     * usesRemaining field.
      */
     private int usesRemaining;
     /**
-     * Effect dice.
+     * effectDice field.
      */
     private final DamageDice effectDice;
 
     /**
-     * Potion.
-     *
-     * @param name name.
-     * @param usesRemaining uses remaining.
-     * @param effectDice effect dice.
+     * Creates a new Potion instance.
+     * @param name name value.
+     * @param usesRemaining usesRemaining value.
+     * @param effectDice effectDice value.
      */
     protected Potion(String name, int usesRemaining, DamageDice effectDice) {
         this.name = name;
@@ -33,23 +32,35 @@ public abstract class Potion {
         this.effectDice = effectDice;
     }
 
+    // ===== Getters =====
+
+    /**
+     * getName operation.
+     * @return Requested value.
+     */
     public String getName() { return name; }
+    /**
+     * getUsesRemaining operation.
+     * @return Requested value.
+     */
     public int getUsesRemaining() { return usesRemaining; }
+    /**
+     * getEffectDice operation.
+     * @return Requested value.
+     */
     public DamageDice getEffectDice() { return effectDice; }
 
     /**
-     * Can use.
-     *
-     * @return result.
+     * canUse operation.
+     * @return Result value.
      */
     protected boolean canUse() {
         return usesRemaining > 0;
     }
 
     /**
-     * Consume and roll.
-     *
-     * @return result.
+     * Check if the potion can be used, if yes roll the dice for it
+     * @return Result value.
      */
     protected int consumeAndRoll() {
         if (!canUse()) throw new IllegalStateException("No uses left");

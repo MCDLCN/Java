@@ -7,11 +7,11 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Bandit class.
+ * An enemy creature representing a humanoid opponent.
  */
 public class Bandit extends Creature {
     /**
-     * Bandit.
+     * Creates a new Bandit instance.
      */
     public Bandit() {
         Map<Stat, Integer> stats = new EnumMap<>(Stat.class);
@@ -23,12 +23,11 @@ public class Bandit extends Creature {
         stats.put(Stat.CHA, 10);
         super(11,  12, "Bandit", stats);
     }
-    @Override
     /**
-     * Get type name.
-     *
-     * @return result.
+     * Returns the display name of this creature type/class.
+     * @return Requested value.
      */
+    @Override
     public String getTypeName() {
         return "Bandit";
     }

@@ -1,34 +1,33 @@
 package items.defensives;
 
 /**
- * Armour class.
+ * Defensive equipment that affects Armor Class (AC) depending on armor type and dexterity modifier rules.
  */
-public class Armour extends DefensiveEquipement{
+public class Armour extends DefensiveEquipment {
 
     /**
-     * Ac.
+     * Armor Class used for determining whether attacks hit.
      */
     private int ac;
     /**
-     * Name.
+     * Display name of the creature.
      */
     private String name;
     /**
-     * Description.
+     * description field.
      */
     private String description;
     /**
-     * Type.
+     * type field.
      */
     private ArmourType type;
 
     /**
-     * Armour.
-     *
-     * @param ac ac.
-     * @param name name.
-     * @param description description.
-     * @param type type.
+     * Creates a new Armour instance.
+     * @param ac ac value.
+     * @param name name value.
+     * @param description description value.
+     * @param type type value.
      */
     public Armour(int ac, String name, String description, ArmourType type) {
         super(ac, name, description);
@@ -36,16 +35,15 @@ public class Armour extends DefensiveEquipement{
     }
 
     /**
-     * Get type.
-     *
-     * @return result.
+     * getType operation.
+     * @return Requested value.
      */
     public ArmourType getType() {
         return type;
     }
 
     /**
-     * Armour type enum.
+     * Enumeration of the three type of armour there is.
      */
     public enum ArmourType {
         LIGHT,

@@ -6,45 +6,38 @@ import entities.Creature;
 import java.util.Map;
 
 /**
- * Warrior class.
+ * Player character class focused on durability. Uses a larger hit die to compute maximum HP.
  */
 public class Warrior extends Creature {
     /**
-     * Warrior.
-     *
-     * @param HP hp.
-     * @param name name.
-     * @param stats stats.
+     * Hit die value used to calculate the max HP
+     */
+    private final int hitDie = 10;
+
+    /**
+     * Creates a new Warrior instance.
+     * @param HP HP value.
+     * @param name name value.
+     * @param stats stats value.
      */
     public Warrior(int HP, String name, Map<Stat, Integer> stats) {
         super(HP, 10, name, stats);
         this.setMaxHp(this.calculateHP());
     }
-    @Override
     /**
-     * Get type name.
-     *
-     * @return result.
+     * Returns the display name of this creature type/class.
+     * @return Requested value.
      */
+    @Override
     public String getTypeName() {
         return "Warrior";
     }
 
     /**
-     * Get max hit die.
-     *
-     * @return result.
-     */
-    protected int getMaxHitDie() {
-        return 10;
-    }
-
-    /**
-     * Calculate hp.
-     *
-     * @return result.
+     * Calculates maximum HP from class hit die and constitution modifier.
+     * @return Result value.
      */
     protected int calculateHP(){
-        return this.getStatModifier(Stat.CON)+this.getMaxHitDie();
+        return this.getStatModifier(Stat.CON)+this.hitDie;
     }
 }

@@ -9,40 +9,31 @@ import tile.Tile;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Represents the dungeon board.
- * <p>
- * The board is composed of {@link Tile} elements randomly generated at
- * instantiation. It also manages the player's current position
- * and movement logic.
+ * Represents the dungeon board as a fixed-size sequence of tiles generated when a game starts. Tracks the player's current position and resolves movement, including an out-of-board exception used as a win condition when a roll overshoots the final tile.
  */
 public class Board {
 
     /**
-     * The array representing the dungeon tiles.
+     * Dungeon board instance containing tiles and current position.
      */
     private Tile[] board;
 
     /**
-     * The current position of the player on the board.
+     * Current zero-based position of the player on the board.
      */
     private int position;
 
     /**
-     * Constructs a new board of 65 tiles and fills it randomly.
+     * Creates a new Board instance.
      */
     public Board() {
-        this.board = new Tile[65];
+        this.board = new Tile[64];
         this.position = 0;
         this.fill();
     }
 
     /**
-     * Randomly fills the board with tiles.
-     * <ul>
-     *     <li>50% chance: {@link EnemyTile}</li>
-     *     <li>25% chance: {@link ChestTile}</li>
-     *     <li>25% chance: {@link EmptyTile}</li>
-     * </ul>
+     * Populates the board with randomly selected tiles (enemies, chests, or empty tiles).
      */
     public void fill() {
         for (int i = 0; i < board.length; i++) {
@@ -59,12 +50,9 @@ public class Board {
     }
 
     /**
-     * Moves the player forward or backward on the board.
-     *
-     * @param roll the number of tiles to move
-     * @return the {@link Tile} reached after movement
-     * @throws OutOfBoardException if the movement exceeds the board size
-     * @throws IllegalStateException if the resulting position is negative
+     * Applies a movement to the board position and returns the tile landed on. Overshooting the end throws an exception treated as a win condition by the game loop.
+     * @param roll roll value.
+     * @return New board position.
      */
     protected Tile moving(int roll) {
 
@@ -84,38 +72,33 @@ public class Board {
     }
 
     /**
-     * Replaces the current tile with an {@link EmptyTile}.
-     * <p>
-     * Used after an encounter has been cleared to prevent repetition.
+     * Replaces the tile at the current position with an EmptyTile after it has been cleared.
      */
     public void emptyCurrent() {
         this.board[this.position] = new EmptyTile();
     }
 
     /**
-     * Returns the current position of the player.
-     *
-     * @return the player’s position index
+     * getPosition operation.
+     * @return Requested value.
      */
     public int getPosition() {
         return this.position;
     }
 
     /**
-     * Exception thrown when a movement exceeds the last tile,
-     * usually indicating a victory condition.
+     * Exception class for if the player goes over the board.
      */
     public class OutOfBoardException extends RuntimeException {
-        /**
-         * Out of board exception.
-         *
-         * @param message message.
-         */
         public OutOfBoardException(String message) {
             super(message);
         }
     }
 
+    /**
+     * Returns the index of the final tile on the board.
+     * @return Requested value.
+     */
     public int getLastTileIndex(){
         return board.length-1;
     }

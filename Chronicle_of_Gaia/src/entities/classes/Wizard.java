@@ -6,26 +6,34 @@ import entities.Creature;
 import java.util.Map;
 
 /**
- * Wizard class.
+ * Player character class focused on magic. Uses a smaller hit die to compute maximum HP.
  */
 public class Wizard extends Creature {
     /**
-     * Wizard.
-     *
-     * @param HP hp.
-     * @param name name.
-     * @param stats stats.
+     * Hit die value used to calculate the max HP
+     */
+    private final int hitDie = 8;
+
+    /**
+     * Creates a new Wizard instance.
+     * @param HP HP value.
+     * @param name name value.
+     * @param stats stats value.
      */
     public Wizard(int HP, String name, Map<Stat, Integer> stats) {
         super(HP, 10, name, stats);
+        this.setMaxHp(this.calculateHP());
     }
-    @Override
     /**
-     * Get type name.
-     *
-     * @return result.
+     * Returns the display name of this creature type/class.
+     * @return Requested value.
      */
+    @Override
     public String getTypeName() {
         return "Wizard";
+    }
+
+    protected int calculateHP(){
+        return this.getStatModifier(Stat.CON)+this.hitDie;
     }
 }

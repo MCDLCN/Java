@@ -4,27 +4,24 @@ import crawlinmydungeon.dice.DamageDice;
 import entities.Creature;
 
 /**
- * Healing potion class.
+ * A potion intended to restore HP when consumed.
  */
 public class HealingPotion extends Potion {
 
     /**
-     * Healing potion.
-     *
-     * @param name name.
-     * @param usesRemaining uses remaining.
-     * @param healDice heal dice.
+     * Creates a new HealingPotion instance.
+     * @param name name value.
+     * @param usesRemaining usesRemaining value.
+     * @param healDice healDice value.
      */
     public HealingPotion(String name, int usesRemaining, DamageDice healDice) {
         super(name, usesRemaining, healDice);
     }
 
     /**
-     * Use on.
-     *
-     * @param target target.
-     *
-     * @return result.
+     * Heal the creature.
+     * @param target target value.
+     * @return Result value.
      */
     public int useOn(Creature target) {
         int heal = consumeAndRoll();

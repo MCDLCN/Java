@@ -1,9 +1,9 @@
 package items.defensives;
 
 /**
- * Defensive equipment representing a shield, typically increasing AC when equipped.
+ * Base type for defensive equipment items such as armor and shields.
  */
-public class Shield {
+public abstract class DefensiveEquipment {
     /**
      * Armor Class used for determining whether attacks hit.
      */
@@ -18,12 +18,12 @@ public class Shield {
     private String description;
 
     /**
-     * Creates a new Shield instance.
+     * Creates a new DefensiveEquipment instance.
      * @param ac ac value.
      * @param name name value.
      * @param description description value.
      */
-    public Shield(int ac, String name, String description) {
+    protected DefensiveEquipment(int ac, String name, String description) {
         this.ac = ac;
         this.name = name;
         this.description = description;
@@ -36,20 +36,18 @@ public class Shield {
     public int getAc() {
         return ac;
     }
-
     /**
      * getName operation.
      * @return Requested value.
      */
-    public String getName(){
+    public String getName() {
         return name;
     }
     /**
      * getDescription operation.
      * @return Requested value.
      */
-    public String getDescription(){
+    public String getDescription() {
         return description;
     }
-
 }

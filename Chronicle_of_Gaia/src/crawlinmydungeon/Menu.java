@@ -7,26 +7,17 @@ import crawlinmydungeon.enums.MainChoice;
 import java.util.Scanner;
 
 /**
- * Menu class.
+ * Handles all console I/O for menus and validated user input using the shared Console helper.
  */
 public class Menu {
 
-    /**
-     * Scanner.
-     *
-     * @param System.in system in.
-     *
-     * @return result.
-     */
     private final Scanner scanner = new Scanner(System.in);
     
 
     /**
-     * Show main menu.
-     *
-     * @param hasCharacter has character.
-     *
-     * @return result.
+     * Displays the main menu and returns the selected action.
+     * @param hasCharacter display more menu if a character exists.
+     * @return Result value.
      */
     public MainChoice showMainMenu(boolean hasCharacter) {
         Console.print("\n=== Main Menu ===");
@@ -63,9 +54,8 @@ public class Menu {
 
 
     /**
-     * Ask character type.
-     *
-     * @return result.
+     * Prompts the user to choose a character class.
+     * @return The selected class.
      */
     public CharacterType askCharacterType() {
         Console.print("\nChoose a class:");
@@ -76,9 +66,8 @@ public class Menu {
     }
 
     /**
-     * Ask name.
-     *
-     * @return result.
+     * Prompts the user for a character name.
+     * @return The new name entered by the player.
      */
     public String askName() {
         Console.print("Enter name: ");
@@ -87,13 +76,11 @@ public class Menu {
 
 
     /**
-     * Ask int.
-     *
-     * @param prompt prompt.
-     * @param min min.
-     * @param max max.
-     *
-     * @return result.
+     * Prompts repeatedly until the user provides an integer within the specified bounds.
+     * @param prompt prompt text.
+     * @param min min value.
+     * @param max max value.
+     * @return the user's input if it successfully pass the checks.
      */
     public int askInt(String prompt, int min, int max) {
         while (true) {
@@ -110,11 +97,19 @@ public class Menu {
     }
 
     /**
-     * Show message.
-     *
-     * @param message message.
+     * Display the message.
+     * @param message message value.
      */
     public void showMessage(String message) {
         Console.print(message);
+    }
+
+    /**
+     * Display the message with a specific color.
+     * @param message message value.
+     * @param color color value.
+     */
+    public void showMessage(String message, Console.ConsoleColor color){
+        Console.print(message, color);
     }
 }

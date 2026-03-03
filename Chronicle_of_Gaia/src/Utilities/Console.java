@@ -1,13 +1,10 @@
 package Utilities;
 
 /**
- * Console class.
+ * Utility for printing colored text to the terminal using ANSI escape codes.
  */
 public class Console {
 
-    /**
-     * Console color enum.
-     */
     public enum ConsoleColor {
 
         // Reset
@@ -65,48 +62,41 @@ public class Console {
         BG_BRIGHT_BLUE("\u001B[104m"),
         BG_BRIGHT_PURPLE("\u001B[105m"),
         BG_BRIGHT_CYAN("\u001B[106m"),
-        /**
-         * Bg bright white.
-         *
-         * @param "\u001B[107m" u 001 b 107 m.
-         *
-         * @return result.
-         */
         BG_BRIGHT_WHITE("\u001B[107m");
 
-        /**
-         * Code.
-         */
         private final String code;
 
-        /**
-         * Console color.
-         *
-         * @param code code.
-         */
         ConsoleColor(String code) {
             this.code = code;
         }
 
-        /**
-         * Get code.
-         *
-         * @return result.
-         */
         public String getCode() {
             return code;
         }
     }
 
+    /**
+     * ANSI reset code that clears styling after printing.
+     */
     public static final String RESET = "\u001B[0m";
 
+    /**
+     * Prints text to the console with ANSI color styling.
+     * @param text text value.
+     * @param color color value.
+     */
     public static void print(String text, ConsoleColor color) {
         System.out.println(color.getCode() + text + ConsoleColor.RESET.getCode());
     }
 
+    /**
+     * Prints text to the console with the default color being CYAN.
+     * @param text text value.
+     */
     public static void print(String text) {
         print(text,ConsoleColor.BRIGHT_CYAN);
     }
+
 
     public static String fg256(int n) { return "\u001B[38;5;" + n + "m"; }
     public static String bg256(int n) { return "\u001B[48;5;" + n + "m"; }

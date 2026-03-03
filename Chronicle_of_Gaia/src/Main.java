@@ -1,13 +1,12 @@
 import crawlinmydungeon.Game;
 
 /**
- * Main class.
+ * Program entry point that starts the game.
  */
 public class Main {
     /**
-     * Main.
-     *
-     * @param args args.
+     * main operation.
+     * @param args args value.
      */
     public static void main(String[] args) {
         new Game().start();

@@ -1,7 +1,7 @@
 package crawlinmydungeon.enums;
 
 /**
- * Character menu choice enum.
+ * Character-related menu choices (display/edit/etc.).
  */
 public enum CharacterMenuChoice {
     DISPLAY,

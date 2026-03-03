@@ -4,27 +4,24 @@ import crawlinmydungeon.dice.DamageDice;
 import entities.Creature;
 
 /**
- * Damage potion class.
+ * A potion intended to deal damage when used.
  */
 public class DamagePotion extends Potion {
 
     /**
-     * Damage potion.
-     *
-     * @param name name.
-     * @param usesRemaining uses remaining.
-     * @param damageDice damage dice.
+     * Creates a new DamagePotion instance.
+     * @param name name value.
+     * @param usesRemaining usesRemaining value.
+     * @param damageDice damageDice value.
      */
     public DamagePotion(String name, int usesRemaining, DamageDice damageDice) {
         super(name, usesRemaining, damageDice);
     }
 
     /**
-     * Use on.
-     *
-     * @param target target.
-     *
-     * @return result.
+     * Damage the creature.
+     * @param target target value.
+     * @return Result value.
      */
     public int useOn(Creature target) {
         int dmg = consumeAndRoll();
