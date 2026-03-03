@@ -4,3 +4,5 @@ memo.md
 doc/
 .idea/
 *.iml
+lib/
+PasswordSQL.md

@@ -139,8 +139,8 @@ public abstract class Creature {
 
     /**
      * setOneStat operation.
-     * @param stat stat value.
-     * @param value value value.
+     * @param stat where we put the stat value.
+     * @param value stat's value.
      */
     public void setOneStat(Stat stat, int value) {
         this.stats.put(stat, value);
@@ -149,10 +149,18 @@ public abstract class Creature {
 
     /**
      * setName operation.
-     * @param newName newName value.
+     * @param newName name value.
      */
     public void setName(String newName) {
         this.name = newName;
+    }
+
+    /**
+     * setHp operation.
+     * @param hp hp value.
+     */
+    public void setHp(int hp) {
+        this.hp = hp;
     }
 
     // ===== Game Logic Methods =====

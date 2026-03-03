@@ -23,6 +23,7 @@ public class Warrior extends Creature {
     public Warrior(int HP, String name, Map<Stat, Integer> stats) {
         super(HP, 10, name, stats);
         this.setMaxHp(this.calculateHP());
+        this.setHp(this.getMaxHp());
     }
     /**
      * Returns the display name of this creature type/class.
