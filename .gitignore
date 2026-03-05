@@ -6,3 +6,5 @@ doc/
 *.iml
 lib/
 PasswordSQL.md
+*.zip
+
