@@ -18,7 +18,7 @@ public class Shield extends DefensiveEquipment{
     }
 
     @Override
-    protected boolean isStackable() {
+    public boolean isStackable() {
         return false;
     }
 }

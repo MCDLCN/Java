@@ -2,5 +2,7 @@ package main_logic.enums;
 
 public enum EnemyType {
     GOBLIN,
-    BANDIT
+    BANDIT,
+    DRAGON,
+    ENEMY_MAGE
 }

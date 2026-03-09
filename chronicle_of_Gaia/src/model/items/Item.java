@@ -17,10 +17,6 @@ public abstract class Item {
         return name;
     }
 
-    protected abstract boolean isStackable();
+    public abstract boolean isStackable();
 
-    @Override
-    public String toString(){
-
-    }
 }

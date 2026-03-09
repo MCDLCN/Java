@@ -2,7 +2,9 @@ package tile;
 
 import main_logic.Game;
 import main_logic.enums.EncounterResult;
+import main_logic.enums.EnemyType;
 import model.entities.evilaaaneighbours.Enemy;
+import model.entities.evilaaaneighbours.EnemyFactory;
 import utilities.Console;
 
 /**
@@ -13,14 +15,14 @@ public class EnemyTile implements Tile {
     /**
      * Enemy creature encountered on this tile.
      */
-    private final Enemy enemy;
+    private final EnemyType enemyT;
 
     /**
      * Creates a new EnemyTile instance.
      * @param enemy enemy value.
      */
-    public EnemyTile(Enemy enemy) {
-        this.enemy = enemy;
+    public EnemyTile(EnemyType enemy) {
+        this.enemyT = enemy;
     }
 
     /**
@@ -42,6 +44,7 @@ public class EnemyTile implements Tile {
      */
     @Override
     public EncounterResult onEnter(Game game) {
+        Enemy enemy = EnemyFactory.create(enemyT);
         Console.print("THIS IS A FIGHT", Console.ConsoleColor.BRIGHT_RED);
         Console.print("You encounter a " + enemy.getName(), Console.ConsoleColor.RED);
         Console.print("WOW YOU WON THAT EASILY ITS LIKE YOU DIDN'T EVEN FIGHT",  Console.ConsoleColor.RED);
@@ -53,7 +56,7 @@ public class EnemyTile implements Tile {
      *
      * @return the enemy contained in the tile
      */
-    public Enemy getEnemy(){
-        return this.enemy;
+    public EnemyType getEnemyType(){
+        return this.enemyT;
     }
 }

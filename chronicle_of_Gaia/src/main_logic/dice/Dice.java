@@ -6,7 +6,7 @@ import java.util.Random;
  * General-purpose dice roller used for game mechanics such as movement. Provides instance-based and static rolling helpers.
  */
 public class Dice {
-    private static final Random random = new Random();
+    public static final Random random = new Random();
     /**
      * Number of sides on this die (e.g., 6 for a d6).
      */

@@ -1,4 +1,4 @@
-package model.items.consummables;
+package model.items.consumables;
 
 import main_logic.dice.DamageDice;
 import main_logic.enums.ItemCode;
@@ -39,7 +39,7 @@ public abstract class Potion extends Item {
     }
 
     @Override
-    protected boolean isStackable(){
+    public boolean isStackable(){
         return true;
     };
 

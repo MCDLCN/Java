@@ -40,7 +40,7 @@ public abstract class OffensiveEquipment extends Item {
     }
 
     @Override
-    protected boolean isStackable(){
+    public boolean isStackable(){
         return false;
     }
 }

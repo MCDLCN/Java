@@ -1,5 +1,6 @@
 package main_logic;
 
+import main_logic.enums.EnemyType;
 import model.entities.evilaaaneighbours.Goblin;
 import persistence.BoardRepository;
 import tile.ChestTile;
@@ -8,8 +9,11 @@ import tile.EnemyTile;
 import tile.Tile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static main_logic.dice.Dice.random;
 
 /**
  * Represents the dungeon board as a fixed-size sequence of tiles generated when a game starts. Tracks the player's current position and resolves movement, including an out-of-board exception used as a win condition when a roll overshoots the final tile.
@@ -19,8 +23,10 @@ public class Board {
     /**
      * Dungeon board instance containing tiles and current position.
      */
-    private final ArrayList<Tile> board;
+    private ArrayList<Tile> board;
 
+
+    // ------ Constructor ------
 
     /**
      * Creates a new Board instance.
@@ -34,6 +40,8 @@ public class Board {
 
         fill();
     }
+
+    // ------ Getters ------
 
     /**
      * Returns the index of the final tile on the board.
@@ -52,6 +60,12 @@ public class Board {
         return board.get(position);
     }
 
+    public int getSize() {
+        return board.size();
+    }
+
+    // ------ Setters ------
+
     /**
      * Set the tile
      * @param position the position where we set the tile
@@ -62,18 +76,32 @@ public class Board {
     }
 
     /**
+     * Replaces the tile at the current position with an EmptyTile after it has been cleared.
+     * @param position the position where we empty the tile
+     */
+    public void setEmpty(int position) {
+        board.set(position, new EmptyTile());
+    }
+
+    // ------ Logic ------
+
+    /**
      * Populates the board with randomly selected tiles (enemies, chests, or empty tiles).
      */
     public void fill() {
         for (int i = 0; i < board.size(); i++) {
-            int randomNum = ThreadLocalRandom.current().nextInt(1, 101);
+            int roll = random.nextInt(3);
 
-            if (randomNum < 51) {
-                board.set(i,new EnemyTile(new Goblin()));
-            } else if (randomNum < 76) {
-                board.set(i,new ChestTile());
+            if (i == 0){
+                board.set(i, new EmptyTile());
             } else {
-                board.set(i,new EmptyTile());
+                if (roll == 0) {
+                    board.set(i, new EmptyTile());
+                } else if (roll == 1) {
+                    board.set(i, new ChestTile());
+                } else {
+                    board.set(i, new EnemyTile(pickEnemyType(i)));
+                }
             }
         }
     }
@@ -98,22 +126,44 @@ public class Board {
         return newPos;
     }
 
-    /**
-     * Replaces the tile at the current position with an EmptyTile after it has been cleared.
-     * @param position the position where we empty the tile
-     */
-    public void setEmpty(int position) {
-        board.set(position, new EmptyTile());
+    private EnemyType pickEnemyType(int index) {
+        double progress = (double) index / (board.size() - 1);
+        int roll = random.nextInt(100);
+
+        if (progress < 0.25) {
+            return roll < 75 ? EnemyType.GOBLIN
+                    : roll < 95 ? EnemyType.BANDIT
+                    : roll < 99 ? EnemyType.ENEMY_MAGE
+                    : EnemyType.DRAGON;
+        } else if (progress < 0.50) {
+            return roll < 45 ? EnemyType.GOBLIN
+                    : roll < 80 ? EnemyType.BANDIT
+                    : roll < 95 ? EnemyType.ENEMY_MAGE
+                    : EnemyType.DRAGON;
+        } else if (progress < 0.75) {
+            return roll < 20 ? EnemyType.GOBLIN
+                    : roll < 55 ? EnemyType.BANDIT
+                    : roll < 85 ? EnemyType.ENEMY_MAGE
+                    : EnemyType.DRAGON;
+        } else {
+            return roll < 10 ? EnemyType.GOBLIN
+                    : roll < 30 ? EnemyType.BANDIT
+                    : roll < 65 ? EnemyType.ENEMY_MAGE
+                    : EnemyType.DRAGON;
+        }
     }
+
 
     /**
      * Exception class for if the player goes over the board.
      */
-    public class OutOfBoardException extends RuntimeException {
+    public static class OutOfBoardException extends RuntimeException {
         public OutOfBoardException(String message) {
             super(message);
         }
     }
+
+    // ------ Loading/saving ------
 
     /**
      * Applies persisted tile rows to the in-memory board.
@@ -129,21 +179,27 @@ public class Board {
             throw new IllegalArgumentException("Expected " + board.size() + " tiles, got " + rows.size());
         }
 
+        ArrayList<Tile> loadedTiles = new ArrayList<>(Collections.nCopies(rows.size(), null));
+
+
         for (BoardRepository.TileRow r : rows) {
+            Tile tile;
 
-            Tile tile = switch (r.getType()) {
+             switch (r.getType()) {
 
-                case EMPTY -> new EmptyTile();
+                case EMPTY -> tile = new EmptyTile();
 
-                case CHEST -> new ChestTile();
+                case CHEST -> tile = new ChestTile();
 
                 case ENEMY -> {
-                    yield new EnemyTile(new Goblin());
+                    EnemyType enemyType = EnemyType.valueOf(r.getEnemyType().orElseThrow());
+                    tile = new EnemyTile(enemyType);
                 }
-            };
-
-            board.set(r.getIdx(), tile);
+                 default -> throw new IllegalStateException("Unknown tile type: " + r.getType());
+            }
+            loadedTiles.set(r.getIdx(), tile);
         }
+        this.board = loadedTiles;
     }
 
     /**
@@ -166,14 +222,17 @@ public class Board {
                 continue;
             }
 
-            if (t instanceof ChestTile) {
+            else if (t instanceof ChestTile) {
                 rows.add(new BoardRepository.TileRow(idx, BoardRepository.TileType.CHEST, null));
                 continue;
             }
 
-            if (t instanceof EnemyTile enemyTile) {
-                String enemyType = enemyTile.getEnemy().getTypeName();
-                rows.add(new BoardRepository.TileRow(idx, BoardRepository.TileType.ENEMY, enemyType));
+            else if (t instanceof EnemyTile enemyTile) {
+                rows.add(new BoardRepository.TileRow(
+                        idx,
+                        BoardRepository.TileType.ENEMY,
+                        enemyTile.getEnemyType().name()
+                ));
                 continue;
             }
 

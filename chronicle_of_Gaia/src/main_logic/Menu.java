@@ -124,4 +124,18 @@ public class Menu {
     public void showMessage(String message, Console.ConsoleColor color){
         Console.print(message, color);
     }
+
+    public Long askLong(String prompt, Long min, Long max) {
+        while (true) {
+            Console.print(prompt);
+            if (scanner.hasNextLong()) {
+                Long v = scanner.nextLong();
+                scanner.nextLine();
+                if (v >= min && v <= max) return v;
+            } else {
+                scanner.nextLine();
+            }
+            Console.print("Enter a id between " + min + " and " + max + ".");
+        }
+    }
 }

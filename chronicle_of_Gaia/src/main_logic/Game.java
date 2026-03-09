@@ -1,19 +1,15 @@
 package main_logic;
 
+import dto.CharacterSummary;
 import main_logic.enums.EncounterResult;
-import model.entities.Stats;
-import model.entities.classes.PlayerCharacter;
-import persistence.BoardRepository;
-import persistence.CharacterRepository;
-import persistence.CharacterSummary;
-import persistence.LoadedGame;
-import utilities.Console;
-import main_logic.dice.Dice;
 import main_logic.enums.CharacterType;
 import main_logic.enums.MainChoice;
 import main_logic.enums.Stat;
-import model.entities.classes.Warrior;
-import model.entities.classes.Wizard;
+import main_logic.service.GameSessionService;
+import main_logic.session.GameSession;
+import model.entities.Stats;
+import utilities.Console;
+import main_logic.dice.Dice;
 import tile.Tile;
 
 import java.sql.SQLException;
@@ -21,64 +17,53 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Coordinates the main game loop: character creation, menu navigation, and board traversal. A game is won by landing exactly on the final tile or by rolling beyond it (handled via an exception).
+ * Coordinates the main game loop: character creation, menu navigation, and board traversal.
+ * A game is won by landing exactly on the final tile or by rolling beyond it.
  */
 public class Game {
-    /**
-     * Board instance containing tiles and current position.
-     */
-    private Board board;
-    /**
-     * Current player character controlled by the user.
-     */
-    protected PlayerCharacter player;
 
     /**
      * Menu handler responsible for user interaction via the console.
      */
-    private Menu menu;
+    private final Menu menu;
 
     /**
-     * To handle the interaction between the game and the database for the character
+     * Coordinates persistence workflows for game sessions.
      */
-    private final CharacterRepository characterRepository;
+    private final GameSessionService gameSessionService;
 
     /**
-     * To handle the interaction between the game and the database for the board
+     * Active runtime game session.
      */
-    private final BoardRepository boardRepository;
+    private GameSession session;
 
     /**
-     * Stores the active save slot id for the current run.
-     */
-    private long saveId;
-
-    /**
-     * Creates the game and initializes repositories.
+     * Creates the game and initializes required services.
      *
      * @throws SQLException if database initialization fails
      */
     public Game() throws SQLException {
         this.menu = new Menu();
-        this.boardRepository = new BoardRepository();
-        this.characterRepository = new CharacterRepository();
+        this.gameSessionService = new GameSessionService();
     }
 
     /**
      * Runs the main menu loop until the user chooses to quit.
+     *
+     * @throws SQLException if a persistence operation fails
      */
     public void start() throws SQLException {
         boolean running = true;
 
         while (running) {
-            MainChoice choice = menu.showMainMenu(player != null);
+            MainChoice choice = menu.showMainMenu(session != null);
 
             switch (choice) {
                 case CREATE_CHARACTER -> createCharacter();
                 case DISPLAY_ALL_CHARACTERS -> showAllCharacters();
-                case LOAD_SAVE ->loadGame();
+                case LOAD_SAVE -> loadGame();
                 case DISPLAY_CHARACTER -> displayCharacter();
-                case SAVE_GAME  -> saveGame();
+                case SAVE_GAME -> saveGame();
                 case EDIT_NAME -> editCharacterName();
                 case DELETE_CHARACTER -> deleteCharacter();
                 case START_GAME -> play();
@@ -90,224 +75,206 @@ public class Game {
     //------ Main menu ------
 
     /**
-
-     * Creates a new player character.
+     * Creates a new player character and persists its initial game session.
      *
-     * <p>This method:
-     * <ul>
-     * ```
-     <li>Asks the player to choose a character type.</li>
-     ```
-     * ```
-     <li>Prompts for the character's name.</li>
-     ```
-     * ```
-     <li>Generates the character's stats using the point-buy system.</li>
-     ```
-     * ```
-     <li>Instantiates the corresponding player character class.</li>
-     ```
-     * </ul>
-     *
-     * <p>A switch expression is used so new character classes can easily
-     * be added in the future (e.g. Rogue, Paladin, Ranger).</p>
+     * @throws SQLException if persistence fails
      */
     private void createCharacter() throws SQLException {
-
         CharacterType type = menu.askCharacterType();
         String name = menu.askName();
-
         Stats stats = pointBuyStats(menu);
 
-        player = switch (type) {
-            case WARRIOR -> new Warrior(1, name, stats);
-            case WIZARD  -> new Wizard(1, name, stats);
-        };
-
-        saveId = boardRepository.createSave();
-        board = new Board(64);
-        boardRepository.saveBoard(saveId, board.toTileRows());
-        characterRepository.save(saveId, player);
-
+        session = gameSessionService.createSession(type, name, stats);
         menu.showMessage("Character created!");
     }
 
-
     /**
-    * Displays the current character summary and key stats.
-    */
+     * Displays the current character summary and key stats.
+     */
     private void displayCharacter() {
-        if (player == null) {
+        if (session == null) {
             menu.showMessage("No character created yet.");
             return;
         }
-        menu.showMessage(player.toString());
+        menu.showMessage(session.getPlayer().toString());
     }
 
-
-    //------ Character repo ------
-
+    //------ Character session ------
 
     /**
      * Prompts for and applies a new character name.
+     *
+     * @throws SQLException if persistence fails
      */
     private void editCharacterName() throws SQLException {
-        if (player == null) {
+        if (session == null) {
             menu.showMessage("No character selected yet.");
             return;
         }
         String newName = menu.askName();
-        player.setName(newName);
-        this.saveCharacter();
+        session.getPlayer().setName(newName);
+        saveCharacter();
         menu.showMessage("Name updated.");
     }
 
-
     /**
-     * Prompts for a name and loads the corresponding character if it exists
-     */
-    /*private void loadCharacter() throws SQLException {
-        String name  = menu.askName();
-        
-        Optional<LoadedGame> loaded = this.characterRepository.load(name);
-        if (loaded.isPresent()) {
-            player = loaded.get().getPlayer();
-        } else {
-            menu.showMessage("Character not found.");
-        }
-    }*/
-
-    /**
-     * Save the current player character
-     * @throws SQLException if connection fails
+     * Saves the current player character.
+     *
+     * @throws SQLException if persistence fails
      */
     private void saveCharacter() throws SQLException {
-        
-        this.characterRepository.save(this.saveId, this.player);
+        if (session == null) {
+            menu.showMessage("No character selected yet.");
+            return;
+        }
+        gameSessionService.saveCharacter(session);
     }
 
     /**
-     * Display all saved characters
-     * @throws SQLException if connection fails
+     * Displays all saved characters.
+     *
+     * @return saved character summaries
+     * @throws SQLException if loading fails
      */
-    private void showAllCharacters() throws SQLException {
-        
-        List<CharacterSummary> characters = this.characterRepository.listCharacters();
+    private List<CharacterSummary> showAllCharacters() throws SQLException {
+        List<CharacterSummary> characters = gameSessionService.listCharacters();
 
-        for (CharacterSummary c : characters) {
-            menu.showMessage(c.toString());
+        if (characters.isEmpty()) {
+            menu.showMessage("No character created yet.");
+        } else {
+            int i = 1;
+            for (CharacterSummary character : characters) {
+                if (this.session != null) {
+                if (this.session.getCharacterId() == character.id()) {
+                    menu.showMessage(i + " | " + character + " (currently selected)");}
+                } else {
+                    menu.showMessage(i + " | " + character);
+                }
+                i++;
+            }
         }
 
+        return characters;
     }
 
     /**
-     * Delete the current character
-     * @throws SQLException if connection fails
+     * Deletes the current character.
+     *
+     * @throws SQLException if deletion fails
      */
     private void deleteCharacter() throws SQLException {
-        if(this.characterRepository.delete(this.player.getName())){
+        if (session == null) {
+            menu.showMessage("No character selected yet.");
+            return;
+        }
+
+        if (gameSessionService.deleteSession(session.getCharacterId())) {
             menu.showMessage("Character deleted.");
-        };
-        this.player = null;
+        }
+        session = null;
     }
 
-
-    //------ Board repo ------
-
+    //------ Save / load ------
 
     /**
      * Saves the current game state.
-     * @throws SQLException if connection fails
+     *
+     * @throws SQLException if persistence fails
      */
     private void saveGame() throws SQLException {
-        this.characterRepository.save(saveId, player);
-        this.boardRepository.saveBoard(saveId, board.toTileRows());
+        if (session == null) {
+            menu.showMessage("No character selected yet.");
+            return;
+        }
+        gameSessionService.saveSession(session);
         menu.showMessage("Game saved");
     }
 
     /**
      * Loads the game state.
-     * @throws SQLException if connection fails
+     *
+     * @throws SQLException if loading fails
      */
     private void loadGame() throws SQLException {
-        String name  = menu.askName();
+        List<CharacterSummary> characters = showAllCharacters();
 
-        Optional<LoadedGame> result = characterRepository.load(name);
+        if (characters.isEmpty()) {
+            return;
+        }
 
-        if (result.isEmpty()) {
+        int choice = menu.askInt("Enter character's number", 1, characters.size());
+        long characterId = characters.get(choice - 1).id();
+
+        Optional<GameSession> loadedSession = gameSessionService.loadSession(characterId);
+
+        if (loadedSession.isEmpty()) {
             menu.showMessage("Character not found.");
             return;
         }
 
-        LoadedGame loaded = result.get();
-
-        this.saveId = loaded.getSaveId();
-        this.player = loaded.getPlayer();
-
-        List<BoardRepository.TileRow> rows = boardRepository.loadBoard(saveId);
-
-        this.board = new Board(64);
-        board.applyTileRows(rows);
+        session = loadedSession.get();
         menu.showMessage("Game loaded");
     }
 
     //------ Running ------
 
     /**
-     * Runs the core board traversal loop. Each turn rolls movement, advances the board position, and triggers the tile effect. The game ends when the player reaches or overshoots the final tile (overshoot is represented by an exception).
+     * Runs the core board traversal loop.
      */
     public void play() {
+        if (session == null) {
+            menu.showMessage("No character selected yet.");
+            return;
+        }
+
         Dice mainRoll = new Dice(8);
-        if (this.board == null) {
-            this.board = new Board(64);
-        };
+
         while (true) {
             menu.showMessage("Time to roll!", Console.ConsoleColor.GREEN);
             int roll = mainRoll.roll();
 
             try {
-                this.player.setPosition(board.moving(this.player.getPosition(), roll));
+                session.getPlayer().setPosition(
+                        session.getBoard().moving(session.getPlayer().getPosition(), roll)
+                );
 
-                if (this.player.getPosition() == board.getLastTileIndex()) {
-                    menu.showMessage(player.getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
+                if (session.getPlayer().getPosition() == session.getBoard().getLastTileIndex()) {
+                    menu.showMessage(session.getPlayer().getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
                     break;
                 }
 
-                Tile tile = board.getTile(this.player.getPosition());
+                Tile tile = session.getBoard().getTile(session.getPlayer().getPosition());
 
-                menu.showMessage("You rolled a " + roll + " and landed on tile n° " + this.player.getPosition(),
-                        Console.ConsoleColor.BRIGHT_PURPLE);
+                menu.showMessage(
+                        "You rolled a " + roll + " and landed on tile n° " + session.getPlayer().getPosition(),
+                        Console.ConsoleColor.BRIGHT_PURPLE
+                );
                 menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
 
                 EncounterResult result = tile.onEnter(this);
-                if (result == EncounterResult.VICTORY){
-                    this.board.setEmpty(this.player.getPosition());
-                } else if (result == EncounterResult.DEFEAT){
+                if (result == EncounterResult.VICTORY) {
+                    session.getBoard().setEmpty(session.getPlayer().getPosition());
+                } else if (result == EncounterResult.DEFEAT) {
                     Console.print("You lost, loser", Console.ConsoleColor.GOLD);
+                    break;
                 }
 
+                gameSessionService.saveSession(session);
+
             } catch (Board.OutOfBoardException e) {
-                menu.showMessage(player.getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
+                menu.showMessage(session.getPlayer().getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
                 break;
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to autosave game session.", e);
             }
         }
-    }
-
-    /**
-     * Starts a new game by creating a save slot and generating a fresh board.
-     */
-    private void startNewGame() throws SQLException {
-        saveId = boardRepository.createSave();
-        this.board.fill();
-        boardRepository.saveBoard(saveId, board.toTileRows());
-        this.player.setPosition(0);
-        this.play();
     }
 
     //------ Logic ------
 
     /**
-     * Point buy system
+     * Point buy system.
+     *
      * @param menu the menu used to handle the system
      * @return the stat map after successful assignment
      */
@@ -321,25 +288,25 @@ public class Game {
             menu.showMessage("Point-buy: pick values 8..15. Budget: 27 points.");
             menu.showMessage("Costs: 8=0, 9=1, 10=2, 11=3, 12=4, 13=5, 14=7, 15=9\n");
 
-            for (Stat s : Stat.values()) {
+            for (Stat stat : Stat.values()) {
                 while (true) {
                     int remaining = budget - spent;
                     menu.showMessage("Points left: " + remaining);
 
-                    int val = menu.askInt("Set " + s + " (8-15): ", 8, 15);
-                    int cost = pointBuyCost(val);
+                    int value = menu.askInt("Set " + stat + " (8-15): ", 8, 15);
+                    int cost = pointBuyCost(value);
 
                     if (cost > remaining) {
-                        menu.showMessage("Not enough points for " + s + "=" + val +
+                        menu.showMessage("Not enough points for " + stat + "=" + value +
                                 " (cost " + cost + "). Try a lower value.\n");
                         continue;
                     }
 
-                    stats.set(s, val);
+                    stats.set(stat, value);
                     spent += cost;
 
-                    menu.showMessage(s + " set to " + val + " (cost " + cost + ").");
-                    menu.showMessage("Points left after " + s + ": " + (budget - spent) + "\n");
+                    menu.showMessage(stat + " set to " + value + " (cost " + cost + ").");
+                    menu.showMessage("Points left after " + stat + ": " + (budget - spent) + "\n");
                     break;
                 }
             }
@@ -351,13 +318,14 @@ public class Game {
 
     /**
      * Returns the point-buy cost for a given stat value.
-     * @param score score value.
-     * @return Result value.
+     *
+     * @param score score value
+     * @return point-buy cost
      */
     private int pointBuyCost(int score) {
         return switch (score) {
-            case 8  -> 0;
-            case 9  -> 1;
+            case 8 -> 0;
+            case 9 -> 1;
             case 10 -> 2;
             case 11 -> 3;
             case 12 -> 4;
@@ -366,6 +334,12 @@ public class Game {
             case 15 -> 9;
             default -> throw new IllegalArgumentException("Score must be 8..15");
         };
+    }
+
+    //------ Getters ------
+
+    public GameSession getGameSession() {
+        return session;
     }
 
 }

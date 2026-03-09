@@ -1,5 +1,7 @@
 package persistence;
 
+import dto.CharacterSummary;
+import dto.LoadedGame;
 import main_logic.enums.CharacterType;
 import main_logic.enums.Stat;
 import model.entities.Stats;
@@ -18,57 +20,103 @@ public  class CharacterRepository {
              Statement stmt = conn.createStatement()) {
 
             String sql = """
-            
-                    CREATE TABLE IF NOT EXISTS characters (
-              name        VARCHAR(64)  NOT NULL,
-              save_id     BIGINT       NOT NULL,
+            CREATE TABLE IF NOT EXISTS characters (
+              id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+              name        VARCHAR(64)  NOT NULL UNIQUE,
+              save_id     BIGINT       NOT NULL UNIQUE,
               type        VARCHAR(16)  NOT NULL,
               level       INT          NOT NULL,
               max_hp      INT          NOT NULL,
               current_hp  INT          NOT NULL,
-            
+    
               str INT NOT NULL,
               dex INT NOT NULL,
               con INT NOT NULL,
               int_stat INT NOT NULL,
               wis INT NOT NULL,
               cha INT NOT NULL,
-            
+    
               position INT NOT NULL,
-              PRIMARY KEY (name),
               FOREIGN KEY (save_id) REFERENCES saves(id) ON DELETE CASCADE
-            );""";
+            );
+            """;
 
             stmt.execute(sql);
         }
     }
 
     /**
-     * Saves a player character to the database.
+     * Inserts a new player character into the database.
      *
      * @param saveId the save slot id
      * @param player the character to persist
+     * @return the generated character id
      * @throws SQLException if the database operation fails
      */
-    public void save(long saveId, PlayerCharacter player) throws SQLException {
+    public long create(long saveId, PlayerCharacter player) throws SQLException {
 
         String sql = """
         INSERT INTO characters
         (name, save_id, type, level, max_hp, current_hp, str, dex, con, int_stat, wis, cha, position)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          save_id=VALUES(save_id),
-          type=VALUES(type),
-          level=VALUES(level),
-          max_hp=VALUES(max_hp),
-          current_hp=VALUES(current_hp),
-          str=VALUES(str),
-          dex=VALUES(dex),
-          con=VALUES(con),
-          int_stat=VALUES(int_stat),
-          wis=VALUES(wis),
-          cha=VALUES(cha),
-          position=VALUES(position);
+        """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, player.getName());
+            ps.setLong(2, saveId);
+            ps.setString(3, player.getCharacterType().name());
+            ps.setInt(4, player.getLevel());
+            ps.setInt(5, player.getMaxHp());
+            ps.setInt(6, player.getHp());
+
+            ps.setInt(7, player.getOneStat(Stat.STR));
+            ps.setInt(8, player.getOneStat(Stat.DEX));
+            ps.setInt(9, player.getOneStat(Stat.CON));
+            ps.setInt(10, player.getOneStat(Stat.INT));
+            ps.setInt(11, player.getOneStat(Stat.WIS));
+            ps.setInt(12, player.getOneStat(Stat.CHA));
+
+            ps.setInt(13, player.getPosition());
+
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (!rs.next()) {
+                    throw new SQLException("Failed to create character: no generated key returned.");
+                }
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    /**
+     * Updates an existing player character by id.
+     *
+     * @param characterId the persisted character id
+     * @param saveId the save slot id
+     * @param player the character to persist
+     * @throws SQLException if the database operation fails
+     */
+    public void update(long characterId, long saveId, PlayerCharacter player) throws SQLException {
+
+        String sql = """
+        UPDATE characters
+        SET name = ?,
+            save_id = ?,
+            type = ?,
+            level = ?,
+            max_hp = ?,
+            current_hp = ?,
+            str = ?,
+            dex = ?,
+            con = ?,
+            int_stat = ?,
+            wis = ?,
+            cha = ?,
+            position = ?
+        WHERE id = ?
         """;
 
         try (Connection con = getConnection();
@@ -89,6 +137,7 @@ public  class CharacterRepository {
             ps.setInt(12, player.getOneStat(Stat.CHA));
 
             ps.setInt(13, player.getPosition());
+            ps.setLong(14, characterId);
 
             ps.executeUpdate();
         }
@@ -97,26 +146,28 @@ public  class CharacterRepository {
     /**
      * Loads a player character and its associated save slot.
      *
-     * @param name the name of the character to load
+     * @param id the name of the character to load
      * @return an Optional containing the loaded game state
      * @throws SQLException if the database query fails
      */
-    public Optional<LoadedGame> load(String name) throws SQLException {
+    public Optional<LoadedGame> load(Long id) throws SQLException {
 
-        String sql = "SELECT * FROM characters WHERE name = ?";
+
+        String sql = "SELECT * FROM characters WHERE id = ?";
 
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, name);
+            ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
 
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-
                 long saveId = rs.getLong("save_id");
+
+                String name = rs.getString("name");
 
                 CharacterType type = CharacterType.valueOf(rs.getString("type"));
                 int level = rs.getInt("level");
@@ -138,7 +189,7 @@ public  class CharacterRepository {
 
                 player.setPosition(rs.getInt("position"));
 
-                return Optional.of(new LoadedGame(saveId, player));
+                return Optional.of(new LoadedGame(id, saveId, player));
             }
         }
     }
@@ -154,7 +205,7 @@ public  class CharacterRepository {
      */
     public List<CharacterSummary> listCharacters() throws SQLException {
 
-        String sql = "SELECT name, type, level FROM characters";
+        String sql = "SELECT id, name, type, level FROM characters ORDER BY id";
 
         List<CharacterSummary> characters = new ArrayList<>();
 
@@ -164,11 +215,12 @@ public  class CharacterRepository {
 
             while (rs.next()) {
 
+                Long id = rs.getLong("id");
                 String name = rs.getString("name");
                 CharacterType type = CharacterType.valueOf(rs.getString("type"));
                 int level = rs.getInt("level");
 
-                characters.add(new CharacterSummary(name, type, level));
+                characters.add(new CharacterSummary(id, name, type, level));
             }
         }
 
@@ -176,27 +228,24 @@ public  class CharacterRepository {
     }
 
     /**
-     * Deletes a character from the database.
+     * Deletes a character from the database by id.
      *
-     * <p>If the character does not exist, no rows will be affected.</p>
-     *
-     * @param name the name of the character to delete
+     * @param characterId the persisted character id
      * @return true if a character was deleted, false otherwise
      * @throws SQLException if the database operation fails
      */
-    public boolean delete(String name) throws SQLException {
+    public boolean delete(long characterId) throws SQLException {
 
-        String sql = "DELETE FROM characters WHERE name = ?";
+        String sql = "DELETE FROM characters WHERE id = ?";
 
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, name);
+            ps.setLong(1, characterId);
 
             int affectedRows = ps.executeUpdate();
 
             return affectedRows > 0;
-
         }
     }
 

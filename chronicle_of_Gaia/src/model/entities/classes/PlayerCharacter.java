@@ -5,9 +5,13 @@ import main_logic.enums.Stat;
 import model.entities.Creature;
 import model.entities.Stats;
 import model.entities.equipment.Equipment;
+import model.inventory.Inventory;
+import model.inventory.InventoryEntry;
+import model.items.Item;
 import model.items.defensives.Armour;
 import model.items.defensives.Shield;
 import model.items.offensives.Weapon;
+import model.items.scrolls.Scroll;
 
 /**
 
@@ -35,6 +39,7 @@ public abstract class PlayerCharacter extends Creature {
     protected int level;
     protected final int hitDie;
     protected int position;
+    private final Inventory inventory = new Inventory();
 
     //----- Constructors -----
 
@@ -121,12 +126,17 @@ public abstract class PlayerCharacter extends Creature {
         return this.position;
     }
 
+    public Inventory getInventory() {
+        return inventory;
+    }
+
     /**
      * Returns the character type enum used for persistence and reconstruction.
      *
      * @return the character type
      */
     public abstract CharacterType getCharacterType();
+
 
 
 
@@ -163,6 +173,11 @@ public abstract class PlayerCharacter extends Creature {
         this.position = position;
     }
 
+    public void equipScroll(Scroll scroll) {
+        throw new UnsupportedOperationException("This character cannot equip scrolls.");
+    }
+
+
     //----- Logic -----
 
     /**
@@ -188,6 +203,7 @@ public abstract class PlayerCharacter extends Creature {
 
         return firstLevelHp + remainingLevels * (avgRoll + conMod);
     }
+
 
 }
 
