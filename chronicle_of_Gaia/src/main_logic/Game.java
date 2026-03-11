@@ -1,13 +1,17 @@
 package main_logic;
 
+import dto.CharacterClassData;
 import dto.CharacterSummary;
 import main_logic.enums.EncounterResult;
-import main_logic.enums.CharacterType;
 import main_logic.enums.MainChoice;
 import main_logic.enums.Stat;
 import main_logic.service.GameSessionService;
+import main_logic.service.InventoryConsoleService;
 import main_logic.session.GameSession;
 import model.entities.Stats;
+import model.entities.classes.PlayerCharacter;
+import model.entities.evilaaaneighbours.Enemy;
+import model.inventory.InventoryEntry;
 import utilities.Console;
 import main_logic.dice.Dice;
 import tile.Tile;
@@ -15,6 +19,9 @@ import tile.Tile;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+
+import static main_logic.service.InventoryConsoleService.applyCombatItemInteraction;
+import static main_logic.service.InventoryConsoleService.applyItemInteraction;
 
 /**
  * Coordinates the main game loop: character creation, menu navigation, and board traversal.
@@ -36,6 +43,8 @@ public class Game {
      * Active runtime game session.
      */
     private GameSession session;
+
+
 
     /**
      * Creates the game and initializes required services.
@@ -80,11 +89,12 @@ public class Game {
      * @throws SQLException if persistence fails
      */
     private void createCharacter() throws SQLException {
-        CharacterType type = menu.askCharacterType();
+        List<CharacterClassData> availableClasses = gameSessionService.listAvailableClasses();
+        CharacterClassData selectedClass = menu.askCharacterClass(availableClasses);
         String name = menu.askName();
         Stats stats = pointBuyStats(menu);
 
-        session = gameSessionService.createSession(type, name, stats);
+        session = gameSessionService.createSession(selectedClass, name, stats);
         menu.showMessage("Character created!");
     }
 
@@ -145,8 +155,9 @@ public class Game {
             int i = 1;
             for (CharacterSummary character : characters) {
                 if (this.session != null) {
-                if (this.session.getCharacterId() == character.id()) {
-                    menu.showMessage(i + " | " + character + " (currently selected)");}
+                    if (this.session.getCharacterId() == character.id()) {
+                        menu.showMessage(i + " | " + character + " (currently selected)");
+                    }
                 } else {
                     menu.showMessage(i + " | " + character);
                 }
@@ -227,8 +238,7 @@ public class Game {
             return;
         }
 
-        Dice mainRoll = new Dice(8);
-
+        Dice mainRoll = new Dice(6);
         while (true) {
             menu.showMessage("Time to roll!", Console.ConsoleColor.GREEN);
             int roll = mainRoll.roll();
@@ -251,15 +261,26 @@ public class Game {
                 );
                 menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
 
-                EncounterResult result = tile.onEnter(this);
+                GameSession currentSession = session;
+                EncounterResult result = tile.onEnter(this.session);
                 if (result == EncounterResult.VICTORY) {
                     session.getBoard().setEmpty(session.getPlayer().getPosition());
+                    if (session.hasPendingLevelUp()) {
+                        handlePendingStatPoints(session.getPlayer());
+                        session.setPendingLevelUp(false);
+                    }
+                } else if(result == EncounterResult.FLED) {
+                    Console.print("You fled like a coward", Console.ConsoleColor.YELLOW);
                 } else if (result == EncounterResult.DEFEAT) {
                     Console.print("You lost, loser", Console.ConsoleColor.GOLD);
+                    this.session = currentSession;
                     break;
                 }
 
                 gameSessionService.saveSession(session);
+                if (!handlePostTileMenu(tile)) {
+                    return;
+                }
 
             } catch (Board.OutOfBoardException e) {
                 menu.showMessage(session.getPlayer().getName() + " wins!", Console.ConsoleColor.BRIGHT_PURPLE);
@@ -270,7 +291,88 @@ public class Game {
         }
     }
 
-    //------ Logic ------
+    private boolean handlePostTileMenu(Tile tile) throws SQLException {
+        boolean done = false;
+        boolean tileActionUsed = false;
+
+        while (!done) {
+            Console.print("\n1) Manage inventory");
+            Console.print("2) Inspect character");
+            Console.print("3) Save");
+
+            int nextOption = 4;
+            int lastTileOption = nextOption - 1;
+
+            if (!tileActionUsed) {
+                lastTileOption = tile.printPostTileActions(nextOption);
+                nextOption = lastTileOption + 1;
+            }
+
+            int mainMenuOption = nextOption++;
+            int quitOption = nextOption++;
+            int continueOption = nextOption;
+
+            Console.print(mainMenuOption + ") Return to main menu");
+            Console.print(quitOption + ") Quit game");
+            Console.print(continueOption + ") Continue");
+
+            int choice = menu.askInt("What do you want to do now? ", 1, continueOption);
+
+            if (choice == 1) {
+                handleItemInteraction(session.getPlayer());
+                continue;
+            }
+
+            if (choice == 2) {
+                Console.print(session.getPlayer().characterInspection());
+                continue;
+            }
+
+            if (choice == 3) {
+                gameSessionService.saveSession(session);
+                Console.print("Game saved.", Console.ConsoleColor.GREEN);
+                continue;
+            }
+
+            if (!tileActionUsed && tile.handlePostTileAction(session, choice)) {
+                tileActionUsed = true;
+                gameSessionService.saveSession(session);
+                continue;
+            }
+
+            if (choice == mainMenuOption) {
+                gameSessionService.saveSession(session);
+                return false;
+            }
+
+            if (choice == quitOption) {
+                gameSessionService.saveSession(session);
+                System.exit(0);
+            }
+
+            if (choice == continueOption) {
+                done = true;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Handles the optional item interaction .
+     */
+    private void handleItemInteraction(PlayerCharacter player) {
+        boolean done = false;
+        while (!done) {
+            InventoryEntry selectedEntry = InventoryConsoleService.chooseInventoryEntry(player);
+            if (selectedEntry == null) {
+                return;
+            }
+            done = applyItemInteraction(player, selectedEntry);
+        }
+    }
+
+    // ----- Logic -----
 
     /**
      * Point buy system.
@@ -336,10 +438,33 @@ public class Game {
         };
     }
 
-    //------ Getters ------
+    /**
+     * Lets the player spend all pending stat points.
+     */
+    private void handlePendingStatPoints(PlayerCharacter player) {
+        while (player.getUnspentStatPoints() > 0) {
+            Console.print("\nLevel up! You have " + player.getUnspentStatPoints() + " stat point(s) to spend.",
+                    Console.ConsoleColor.GREEN);
 
-    public GameSession getGameSession() {
-        return session;
+            Stat[] stats = Stat.values();
+
+            for (int i = 0; i < stats.length; i++) {
+                int value = player.getOneStat(stats[i]);
+                String suffix = value >= 20 ? " (MAX)" : "";
+                Console.print((i + 1) + ") " + stats[i] + " = " + value + suffix);
+            }
+
+            int choice = menu.askInt("Choose a stat to increase: ", 1, stats.length);
+            Stat selectedStat = stats[choice - 1];
+
+            if (!player.spendStatPoint(selectedStat)) {
+                Console.print(selectedStat + " cannot be increased.", Console.ConsoleColor.YELLOW);
+                continue;
+            }
+
+            Console.print(selectedStat + " increased to " + player.getOneStat(selectedStat) + ".",
+                    Console.ConsoleColor.CYAN);
+            Console.print("HP: " + player.getHp() + "/" + player.getMaxHp());
+        }
     }
-
 }

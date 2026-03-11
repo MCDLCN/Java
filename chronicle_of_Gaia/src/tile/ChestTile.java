@@ -2,6 +2,7 @@ package tile;
 
 import main_logic.Game;
 import main_logic.enums.EncounterResult;
+import main_logic.session.GameSession;
 import model.entities.classes.PlayerCharacter;
 import model.items.ChestLootGenerator;
 import utilities.Console;
@@ -25,12 +26,12 @@ public class ChestTile implements Tile {
      * Applies this tile's effect when a creature enters it.
      * Intended behavior: draw a random item and place it into the player's inventory.
      * Potions are stored in inventory and may be consumed later.
-     * @param game Current state of the game.
+     * @param session Current state of the game.
      */
     @Override
-    public EncounterResult onEnter(Game game) {
-        PlayerCharacter player = game.getGameSession().getPlayer();
-        ChestLootGenerator.LootResult loot = LOOT_GENERATOR.generateLoot(game.getGameSession().getPlayer(), game.getGameSession().getBoard());
+    public EncounterResult onEnter(GameSession session) {
+        PlayerCharacter player = session.getPlayer();
+        ChestLootGenerator.LootResult loot = LOOT_GENERATOR.generateLoot(player, session.getBoard());
         player.getInventory().addItem(loot.item(), loot.quantity());
         Console.print("You found "+loot.item().getCode()+"!", Console.ConsoleColor.YELLOW);
         return EncounterResult.VICTORY;

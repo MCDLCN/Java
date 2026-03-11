@@ -15,6 +15,7 @@ public class GameSession {
     private final long saveId;
     private final PlayerCharacter player;
     private final Board board;
+    private boolean pendingLevelUp = false;
 
     /**
      * Creates a new game session.
@@ -58,6 +59,12 @@ public class GameSession {
         return player;
     }
 
+
+
+    public boolean hasPendingLevelUp() {
+        return pendingLevelUp;
+    }
+
     /**
      * Returns the current board.
      *
@@ -65,5 +72,9 @@ public class GameSession {
      */
     public Board getBoard() {
         return board;
+    }
+
+    public void setPendingLevelUp(boolean b) {
+        this.pendingLevelUp = b;
     }
 }

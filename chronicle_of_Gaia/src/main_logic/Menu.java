@@ -1,9 +1,10 @@
 package main_logic;
 
+import dto.CharacterClassData;
 import utilities.Console;
-import main_logic.enums.CharacterType;
 import main_logic.enums.MainChoice;
 
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Scanner;
 public class Menu {
 
     private final Scanner scanner = new Scanner(System.in);
-    
+
 
     /**
      * Displays the main menu and returns the selected action.
@@ -45,7 +46,7 @@ public class Menu {
             Console.print(displayOption + ") Display character info");
             Console.print(editOption + ") Edit character name");
             Console.print(deleteOption + ") Delete character");
-            Console.print(startOption + ") Start game");
+            Console.print(startOption + ") Play");
         }
 
         quitOption = nextIndex;
@@ -66,15 +67,24 @@ public class Menu {
 
 
     /**
-     * Prompts the user to choose a character class.
-     * @return The selected class.
+     * Prompts the user to choose a character class from the database catalog.
+     *
+     * @param availableClasses available character classes
+     * @return the selected class row
      */
-    public CharacterType askCharacterType() {
+    public CharacterClassData askCharacterClass(List<CharacterClassData> availableClasses) {
+        if (availableClasses.isEmpty()) {
+            throw new IllegalArgumentException("No character classes are available.");
+        }
+
         Console.print("\nChoose a class:");
-        Console.print("1) Warrior");
-        Console.print("2) Wizard");
-        int choice = askInt("Choice: ", 1, 2);
-        return choice == 1 ? CharacterType.WARRIOR : CharacterType.WIZARD;
+
+        for (int i = 0; i < availableClasses.size(); i++) {
+            Console.print((i + 1) + ") " + availableClasses.get(i).name());
+        }
+
+        int choice = askInt("Choice: ", 1, availableClasses.size());
+        return availableClasses.get(choice - 1);
     }
 
     /**

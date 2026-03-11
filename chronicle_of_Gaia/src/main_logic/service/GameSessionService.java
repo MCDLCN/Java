@@ -1,5 +1,6 @@
 package main_logic.service;
 
+import dto.CharacterClassData;
 import dto.CharacterSummary;
 import dto.LoadedGame;
 import main_logic.Board;
@@ -8,7 +9,6 @@ import model.entities.Stats;
 import model.entities.classes.PlayerCharacter;
 import model.entities.classes.Warrior;
 import model.entities.classes.Wizard;
-import main_logic.enums.CharacterType;
 import model.inventory.Inventory;
 import model.inventory.InventoryEntry;
 import model.items.Item;
@@ -18,7 +18,9 @@ import model.items.offensives.Weapon;
 import model.items.scrolls.Scroll;
 import persistence.BoardRepository;
 import persistence.CharacterRepository;
+import persistence.ClassRepository;
 import persistence.InventoryRepository;
+import utilities.Console;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -35,6 +37,7 @@ public class GameSessionService {
     private final CharacterRepository characterRepository;
     private final BoardRepository boardRepository;
     private final InventoryRepository inventoryRepository;
+    private final ClassRepository classRepository;
 
     /**
      * Creates the service and initializes repositories.
@@ -42,25 +45,33 @@ public class GameSessionService {
      * @throws SQLException if database initialization fails
      */
     public GameSessionService() throws SQLException {
+        this.classRepository = new ClassRepository();
         this.characterRepository = new CharacterRepository();
         this.boardRepository = new BoardRepository();
         this.inventoryRepository = new InventoryRepository();
     }
 
     /**
+     * Returns every available player class from the class catalog.
+     *
+     * @return available character classes
+     * @throws SQLException if loading fails
+     */
+    public List<CharacterClassData> listAvailableClasses() throws SQLException {
+        return classRepository.findAll();
+    }
+
+    /**
      * Creates a new persisted game session for a freshly created character.
      *
-     * @param type selected character type
+     * @param selectedClass selected character class row
      * @param name selected character name
      * @param stats generated character stats
      * @return created game session
      * @throws SQLException if persistence fails
      */
-    public GameSession createSession(CharacterType type, String name, Stats stats) throws SQLException {
-        PlayerCharacter player = switch (type) {
-            case WARRIOR -> new Warrior(1, name, stats);
-            case WIZARD -> new Wizard(1, name, stats);
-        };
+    public GameSession createSession(CharacterClassData selectedClass, String name, Stats stats) throws SQLException {
+        PlayerCharacter player = createPlayer(selectedClass, 1, name, stats);
 
         long saveId = boardRepository.createSave();
         Board board = new Board(BOARD_SIZE);
@@ -170,6 +181,25 @@ public class GameSessionService {
     }
 
     /**
+     * Builds one concrete player class from a class catalog row.
+     *
+     * @param selectedClass selected class row
+     * @param level starting level
+     * @param name character name
+     * @param stats generated stats
+     * @return created player character
+     */
+    private PlayerCharacter createPlayer(CharacterClassData selectedClass, int level, String name, Stats stats) {
+        String normalizedName = normalizeClassName(selectedClass.name());
+
+        return switch (normalizedName) {
+            case "WARRIOR" -> new Warrior(level, name, stats, selectedClass.id(), selectedClass.name());
+            case "WIZARD" -> new Wizard(level, name, stats, selectedClass.id(), selectedClass.name());
+            default -> throw new IllegalArgumentException("Unsupported player class: " + selectedClass.name());
+        };
+    }
+
+    /**
      * Rebuilds runtime equipment from equipped inventory entries.
      *
      * @param player loaded player
@@ -192,5 +222,15 @@ public class GameSessionService {
                 player.equipWeapon(weapon);
             }
         }
+    }
+
+    /**
+     * Normalizes a class name for runtime branching.
+     *
+     * @param className class name loaded from the catalog
+     * @return normalized uppercase class name
+     */
+    private String normalizeClassName(String className) {
+        return className == null ? "" : className.trim().toUpperCase();
     }
 }

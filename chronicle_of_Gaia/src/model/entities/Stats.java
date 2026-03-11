@@ -34,6 +34,6 @@ public class Stats {
      */
     public int getModifier(Stat stat) {
         int value = get(stat);
-        return (value - 10) / 2;
+        return Math.floorDiv(value - 10, 2);
     }
 }

@@ -35,8 +35,8 @@ public abstract class OffensiveEquipment extends Item {
      * rollDamage operation.
      * @return Result value.
      */
-    public int rollDamage() {
-        return damage.roll();
+    public int rollDamage(boolean critical) {
+        return damage.roll(critical);
     }
 
     @Override

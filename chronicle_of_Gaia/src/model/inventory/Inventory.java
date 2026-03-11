@@ -35,32 +35,40 @@ public class Inventory {
         items.add(new InventoryEntry(item, quantity));
     }
 
-    public void addLoadedItem(long inventoryRowId, Item item, int quantity,  boolean equipped) {
+    public void addLoadedItem(long inventoryRowId, Item item, int quantity, boolean equipped) {
         items.add(new InventoryEntry(inventoryRowId, item, quantity, equipped));
     }
 
     /**
-     * Removes items from the inventory.
+     * Removes quantity from a specific inventory entry.
      */
-    public void removeItem(Item item, int quantity) {
-
-        Optional<InventoryEntry> entry = findEntry(item.getCode());
-
-        if (entry.isEmpty()) {
+    public void removeEntry(InventoryEntry entry, int quantity) {
+        if (entry == null || quantity <= 0) {
             return;
         }
 
-        InventoryEntry e = entry.get();
+        if (!items.contains(entry)) {
+            return;
+        }
 
-        e.remove(quantity);
+        entry.remove(quantity);
 
-        if (e.getQuantity() <= 0) {
-            items.remove(e);
+        if (entry.getQuantity() <= 0) {
+            items.remove(entry);
         }
     }
 
     /**
-     * Finds an inventory entry by item code.
+     * Removes items by code.
+     * Safe for stackables, not suitable for targeting one specific unique item.
+     */
+    public void removeItem(Item item, int quantity) {
+        Optional<InventoryEntry> entry = findEntry(item.getCode());
+        entry.ifPresent(inventoryEntry -> removeEntry(inventoryEntry, quantity));
+    }
+
+    /**
+     * Finds the first inventory entry by item code.
      */
     public Optional<InventoryEntry> findEntry(ItemCode code) {
         return items.stream()
@@ -69,10 +77,18 @@ public class Inventory {
     }
 
     /**
+     * Returns all entries matching an item code.
+     */
+    public List<InventoryEntry> findEntries(ItemCode code) {
+        return items.stream()
+                .filter(e -> e.getItem().getCode() == code)
+                .toList();
+    }
+
+    /**
      * Returns all items of a given type.
      */
     public <T extends Item> List<InventoryEntry> getItemsOfType(Class<T> clazz) {
-
         List<InventoryEntry> result = new ArrayList<>();
 
         for (InventoryEntry entry : items) {
@@ -92,24 +108,27 @@ public class Inventory {
     }
 
     /**
-     * Equip an item.
+     * Equips a specific inventory entry.
      */
-    public void equip(Item item) {
-        findEntry(item.getCode()).ifPresent(e -> e.setEquipped(true));
+    public void equip(InventoryEntry entry) {
+        if (entry != null && items.contains(entry)) {
+            entry.setEquipped(true);
+        }
     }
 
     /**
-     * Unequip an item.
+     * Unequips a specific inventory entry.
      */
-    public void unequip(Item item) {
-        findEntry(item.getCode()).ifPresent(e -> e.setEquipped(false));
+    public void unequip(InventoryEntry entry) {
+        if (entry != null && items.contains(entry)) {
+            entry.setEquipped(false);
+        }
     }
 
     /**
      * Returns equipped items of a given type.
      */
     public <T extends Item> Optional<InventoryEntry> getEquipped(Class<T> clazz) {
-
         return items.stream()
                 .filter(e -> clazz.isInstance(e.getItem()))
                 .filter(InventoryEntry::isEquipped)
@@ -117,13 +136,11 @@ public class Inventory {
     }
 
     /**
-     * Returns what's equipped
+     * Returns whether something of that type is equipped.
      */
     public <T extends Item> boolean hasEquipped(Class<T> clazz) {
         return items.stream()
                 .filter(InventoryEntry::isEquipped)
                 .anyMatch(e -> clazz.isInstance(e.getItem()));
     }
-
-
 }

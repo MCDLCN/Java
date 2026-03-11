@@ -1,9 +1,12 @@
 package utilities;
 
+import java.util.Scanner;
+
 /**
  * Utility for printing colored text to the terminal using ANSI escape codes.
  */
 public class Console {
+    private static final Scanner scanner = new Scanner(System.in);
 
     public enum ConsoleColor {
 
@@ -100,4 +103,26 @@ public class Console {
 
     public static String fg256(int n) { return "\u001B[38;5;" + n + "m"; }
     public static String bg256(int n) { return "\u001B[48;5;" + n + "m"; }
+
+    /**
+     * Reads an integer choice between min and max.
+     */
+    public static int askInt(String prompt, int min, int max) {
+        while (true) {
+            print(prompt);
+
+            if (scanner.hasNextInt()) {
+                int value = scanner.nextInt();
+                scanner.nextLine();
+
+                if (value >= min && value <= max) {
+                    return value;
+                }
+            } else {
+                scanner.nextLine();
+            }
+
+            Console.print("Enter a number between " + min + " and " + max + ".", Console.ConsoleColor.YELLOW);
+        }
+    }
 }

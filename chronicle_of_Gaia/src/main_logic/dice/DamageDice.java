@@ -35,4 +35,29 @@ public class DamageDice {
         }
         return total;
     }
+
+    /**
+     * Rolls this damage dice with optional critical hit handling.
+     *
+     * <p>A critical hit doubles the number of dice rolled.</p>
+     *
+     * @param critical whether the roll is a critical hit
+     * @return rolled damage
+     */
+    public int roll(boolean critical) {
+        int diceCount = critical ? count * 2 : count;
+        int total = 0;
+        for (int i = 0; i < diceCount; i++) {
+            total += Dice.roll(die.sides);
+        };
+        return total;
+    }
+
+    public Die getDie(){
+        return this.die;
+    }
+
+    public int getNumberOfDice(){
+        return this.count;
+    }
 }

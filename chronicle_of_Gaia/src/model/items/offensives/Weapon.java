@@ -16,4 +16,6 @@ public class Weapon extends OffensiveEquipment {
     public Weapon(ItemCode name, DamageDice damage) {
         super(name, damage);
     }
+
+
 }

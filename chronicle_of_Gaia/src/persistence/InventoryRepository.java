@@ -38,6 +38,8 @@ public class InventoryRepository {
 
     private final ItemInstanceJsonMapper itemInstanceJsonMapper = new ItemInstanceJsonMapper();
 
+    // ----- Init -----
+
     /**
      * Creates the repository and ensures required tables exist.
      *
@@ -45,6 +47,7 @@ public class InventoryRepository {
      */
     public InventoryRepository() throws SQLException {
         initSchema();
+        ensureItemCatalogSynced();
     }
 
     /**
@@ -96,6 +99,55 @@ public class InventoryRepository {
     }
 
     /**
+     * Ensures the item catalog contains every ItemCode enum value.
+     *
+     * <p>The enum remains the source of truth. Missing rows are inserted and
+     * existing rows keep their catalog entry in sync.</p>
+     *
+     * @throws SQLException if synchronization fails
+     */
+    private void ensureItemCatalogSynced() throws SQLException {
+        String sql = """
+        INSERT INTO items (code, name, stackable)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            stackable = VALUES(stackable)
+        """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            for (ItemCode code : ItemCode.values()) {
+                ps.setString(1, code.name());
+                ps.setString(2, code.getDisplayName());
+                ps.setBoolean(3, isStackable(code));
+                ps.addBatch();
+            }
+
+            ps.executeBatch();
+        }
+    }
+
+    /**
+     * Returns whether the given item code is stackable.
+     *
+     * @param code item code
+     * @return true if the item is stackable
+     */
+    private boolean isStackable(ItemCode code) {
+        return switch (code) {
+            case STANDARD_HEALING_POTION,
+                 LARGE_HEALING_POTION,
+                 POTION_OF_DAMAGE -> true;
+            default -> false;
+        };
+    }
+
+
+    // ----- Adding -----
+
+    /**
      * Inserts or updates a catalog item definition.
      *
      * @param code      unique item code
@@ -120,8 +172,6 @@ public class InventoryRepository {
             ps.executeUpdate();
         }
     }
-
-    // ----- Adding -----
 
     /**
      * Adds a stackable item quantity to a character inventory.

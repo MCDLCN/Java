@@ -2,19 +2,19 @@ package persistence;
 
 import dto.CharacterSummary;
 import dto.LoadedGame;
-import main_logic.enums.CharacterType;
-import main_logic.enums.Stat;
 import model.entities.Stats;
 import model.entities.classes.PlayerCharacter;
 import model.entities.classes.Warrior;
 import model.entities.classes.Wizard;
+import main_logic.enums.Stat;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 
-public  class CharacterRepository {
+public class CharacterRepository {
     public CharacterRepository() throws SQLException {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
@@ -24,25 +24,33 @@ public  class CharacterRepository {
               id          BIGINT AUTO_INCREMENT PRIMARY KEY,
               name        VARCHAR(64)  NOT NULL UNIQUE,
               save_id     BIGINT       NOT NULL UNIQUE,
-              type        VARCHAR(16)  NOT NULL,
+              class_id    BIGINT       NULL,
               level       INT          NOT NULL,
+              current_xp INT NOT NULL DEFAULT 0,
+              unspent_stat_points INT NOT NULL DEFAULT 0,
               max_hp      INT          NOT NULL,
               current_hp  INT          NOT NULL,
-    
+
               str INT NOT NULL,
               dex INT NOT NULL,
               con INT NOT NULL,
               int_stat INT NOT NULL,
               wis INT NOT NULL,
               cha INT NOT NULL,
-    
+
+              training_progress VARCHAR(255) NOT NULL DEFAULT '',
               position INT NOT NULL,
-              FOREIGN KEY (save_id) REFERENCES saves(id) ON DELETE CASCADE
+              FOREIGN KEY (save_id) REFERENCES saves(id) ON DELETE CASCADE,
+              FOREIGN KEY (class_id) REFERENCES classes(id)
             );
             """;
 
             stmt.execute(sql);
         }
+
+        migrateLegacyTypeColumn();
+        migrateTrainingProgressColumn();
+        migrateXpColumns();
     }
 
     /**
@@ -54,33 +62,50 @@ public  class CharacterRepository {
      * @throws SQLException if the database operation fails
      */
     public long create(long saveId, PlayerCharacter player) throws SQLException {
+        try (Connection con = getConnection()) {
+            boolean hasTypeColumn = hasColumn(con, "characters", "type");
 
-        String sql = """
-        INSERT INTO characters
-        (name, save_id, type, level, max_hp, current_hp, str, dex, con, int_stat, wis, cha, position)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+            String sql = hasTypeColumn
+                    ? """
+                    INSERT INTO characters
+                    (name, save_id, type, class_id, level, current_xp, unspent_stat_points, max_hp, current_hp, str, dex, con, int_stat, wis, cha, training_progress, position)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """
+                    : """
+                    INSERT INTO characters
+                    (name, save_id, class_id, level, current_xp, unspent_stat_points, max_hp, current_hp, str, dex, con, int_stat, wis, cha, training_progress, position)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                int index = 1;
+                ps.setString(index++, player.getName());
+                ps.setLong(index++, saveId);
 
-            ps.setString(1, player.getName());
-            ps.setLong(2, saveId);
-            ps.setString(3, player.getCharacterType().name());
-            ps.setInt(4, player.getLevel());
-            ps.setInt(5, player.getMaxHp());
-            ps.setInt(6, player.getHp());
+                if (hasTypeColumn) {
+                    ps.setString(index++, normalizeClassName(player.getClassName()));
+                }
 
-            ps.setInt(7, player.getOneStat(Stat.STR));
-            ps.setInt(8, player.getOneStat(Stat.DEX));
-            ps.setInt(9, player.getOneStat(Stat.CON));
-            ps.setInt(10, player.getOneStat(Stat.INT));
-            ps.setInt(11, player.getOneStat(Stat.WIS));
-            ps.setInt(12, player.getOneStat(Stat.CHA));
+                ps.setLong(index++, player.getClassId());
+                ps.setInt(index++, player.getLevel());
+                ps.setInt(index++, player.getCurrentXp());
+                ps.setInt(index++, player.getUnspentStatPoints());
+                ps.setInt(index++, player.getMaxHp());
+                ps.setInt(index++, player.getHp());
 
-            ps.setInt(13, player.getPosition());
+                ps.setInt(index++, player.getOneStat(Stat.STR));
+                ps.setInt(index++, player.getOneStat(Stat.DEX));
+                ps.setInt(index++, player.getOneStat(Stat.CON));
+                ps.setInt(index++, player.getOneStat(Stat.INT));
+                ps.setInt(index++, player.getOneStat(Stat.WIS));
+                ps.setInt(index++, player.getOneStat(Stat.CHA));
 
-            ps.executeUpdate();
+                ps.setString(index++, serializeTrainingProgress(player.getTrainingProgress()));
+                ps.setInt(index, player.getPosition());
+
+                ps.setInt(index, player.getPosition());
+
+                ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (!rs.next()) {
@@ -89,7 +114,7 @@ public  class CharacterRepository {
                 return rs.getLong(1);
             }
         }
-    }
+    }}
 
     /**
      * Updates an existing player character by id.
@@ -100,60 +125,98 @@ public  class CharacterRepository {
      * @throws SQLException if the database operation fails
      */
     public void update(long characterId, long saveId, PlayerCharacter player) throws SQLException {
+        try (Connection con = getConnection()) {
+            boolean hasTypeColumn = hasColumn(con, "characters", "type");
 
-        String sql = """
-        UPDATE characters
-        SET name = ?,
-            save_id = ?,
-            type = ?,
-            level = ?,
-            max_hp = ?,
-            current_hp = ?,
-            str = ?,
-            dex = ?,
-            con = ?,
-            int_stat = ?,
-            wis = ?,
-            cha = ?,
-            position = ?
-        WHERE id = ?
-        """;
+            String sql = hasTypeColumn
+                    ? """
+                    UPDATE characters
+                    SET name = ?,
+                        save_id = ?,
+                        type = ?,
+                        class_id = ?,
+                        level = ?,
+                        current_xp = ?,
+                        unspent_stat_points = ?,
+                        max_hp = ?,
+                        current_hp = ?,
+                        str = ?,
+                        dex = ?,
+                        con = ?,
+                        int_stat = ?,
+                        wis = ?,
+                        cha = ?,
+                        training_progress = ?,
+                        position = ?
+                    WHERE id = ?
+                    """
+                    : """
+                    UPDATE characters
+                    SET name = ?,
+                        save_id = ?,
+                        class_id = ?,
+                        level = ?,
+                        current_xp = ?,
+                        unspent_stat_points = ?,
+                        max_hp = ?,
+                        current_hp = ?,
+                        str = ?,
+                        dex = ?,
+                        con = ?,
+                        int_stat = ?,
+                        wis = ?,
+                        cha = ?,
+                        training_progress = ?,
+                        position = ?
+                    WHERE id = ?
+                    """;
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                int index = 1;
+                ps.setString(index++, player.getName());
+                ps.setLong(index++, saveId);
 
-            ps.setString(1, player.getName());
-            ps.setLong(2, saveId);
-            ps.setString(3, player.getCharacterType().name());
-            ps.setInt(4, player.getLevel());
-            ps.setInt(5, player.getMaxHp());
-            ps.setInt(6, player.getHp());
+                if (hasTypeColumn) {
+                    ps.setString(index++, normalizeClassName(player.getClassName()));
+                }
 
-            ps.setInt(7, player.getOneStat(Stat.STR));
-            ps.setInt(8, player.getOneStat(Stat.DEX));
-            ps.setInt(9, player.getOneStat(Stat.CON));
-            ps.setInt(10, player.getOneStat(Stat.INT));
-            ps.setInt(11, player.getOneStat(Stat.WIS));
-            ps.setInt(12, player.getOneStat(Stat.CHA));
+                ps.setLong(index++, player.getClassId());
+                ps.setInt(index++, player.getLevel());
+                ps.setInt(index++, player.getCurrentXp());
+                ps.setInt(index++, player.getUnspentStatPoints());
+                ps.setInt(index++, player.getMaxHp());
+                ps.setInt(index++, player.getHp());
 
-            ps.setInt(13, player.getPosition());
-            ps.setLong(14, characterId);
+                ps.setInt(index++, player.getOneStat(Stat.STR));
+                ps.setInt(index++, player.getOneStat(Stat.DEX));
+                ps.setInt(index++, player.getOneStat(Stat.CON));
+                ps.setInt(index++, player.getOneStat(Stat.INT));
+                ps.setInt(index++, player.getOneStat(Stat.WIS));
+                ps.setInt(index++, player.getOneStat(Stat.CHA));
 
-            ps.executeUpdate();
+                ps.setString(index++, serializeTrainingProgress(player.getTrainingProgress()));
+                ps.setInt(index++, player.getPosition());
+                ps.setLong(index, characterId);
+
+                ps.executeUpdate();
+            }
         }
     }
 
     /**
      * Loads a player character and its associated save slot.
      *
-     * @param id the name of the character to load
+     * @param id the persisted character id
      * @return an Optional containing the loaded game state
      * @throws SQLException if the database query fails
      */
     public Optional<LoadedGame> load(Long id) throws SQLException {
-
-
-        String sql = "SELECT * FROM characters WHERE id = ?";
+        String sql = """
+        SELECT c.*, COALESCE(cl.name, c.type) AS class_name
+        FROM characters c
+        LEFT JOIN classes cl ON cl.id = c.class_id
+        WHERE c.id = ?
+        """;
 
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -161,16 +224,17 @@ public  class CharacterRepository {
             ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-
                 if (!rs.next()) {
                     return Optional.empty();
                 }
+
                 long saveId = rs.getLong("save_id");
-
                 String name = rs.getString("name");
-
-                CharacterType type = CharacterType.valueOf(rs.getString("type"));
+                long classId = rs.getLong("class_id");
+                String className = rs.getString("class_name");
                 int level = rs.getInt("level");
+                int currentXp = rs.getInt("current_xp");
+                int unspentStatPoints = rs.getInt("unspent_stat_points");
                 int maxHp = rs.getInt("max_hp");
                 int hp = rs.getInt("current_hp");
 
@@ -182,10 +246,12 @@ public  class CharacterRepository {
                 stats.set(Stat.WIS, rs.getInt("wis"));
                 stats.set(Stat.CHA, rs.getInt("cha"));
 
-                PlayerCharacter player = switch (type) {
-                    case WARRIOR -> new Warrior(level, name, stats, maxHp, hp);
-                    case WIZARD -> new Wizard(level, name, stats, maxHp, hp);
-                };
+                PlayerCharacter player = createPlayer(classId, className, level, name, stats, maxHp, hp,  currentXp, unspentStatPoints);
+
+                EnumMap<Stat, Integer> trainingProgress =
+                        deserializeTrainingProgress(rs.getString("training_progress"));
+
+                player.setTrainingProgress(trainingProgress);
 
                 player.setPosition(rs.getInt("position"));
 
@@ -197,7 +263,7 @@ public  class CharacterRepository {
     /**
      * Retrieves a list of all stored characters.
      *
-     * <p>Each entry contains the character name, class type,
+     * <p>Each entry contains the character name, class name,
      * and level for display in the load menu.</p>
      *
      * @return a list of character summaries
@@ -205,7 +271,12 @@ public  class CharacterRepository {
      */
     public List<CharacterSummary> listCharacters() throws SQLException {
 
-        String sql = "SELECT id, name, type, level FROM characters ORDER BY id";
+        String sql = """
+        SELECT c.id, c.name, COALESCE(cl.name, c.type) AS class_name, c.level
+        FROM characters c
+        LEFT JOIN classes cl ON cl.id = c.class_id
+        ORDER BY c.id
+        """;
 
         List<CharacterSummary> characters = new ArrayList<>();
 
@@ -214,13 +285,12 @@ public  class CharacterRepository {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-
                 Long id = rs.getLong("id");
                 String name = rs.getString("name");
-                CharacterType type = CharacterType.valueOf(rs.getString("type"));
+                String className = rs.getString("class_name");
                 int level = rs.getInt("level");
 
-                characters.add(new CharacterSummary(id, name, type, level));
+                characters.add(new CharacterSummary(id, name, className, level));
             }
         }
 
@@ -249,7 +319,104 @@ public  class CharacterRepository {
         }
     }
 
+    /**
+     * Rebuilds one concrete player class from persisted class metadata.
+     *
+     * @param classId persisted class id
+     * @param className persisted class name
+     * @param level persisted level
+     * @param name persisted character name
+     * @param stats persisted stats
+     * @param maxHp persisted max hp
+     * @param hp persisted current hp
+     * @return reconstructed player instance
+     * @throws SQLException when the class is unknown
+     */
+    private PlayerCharacter createPlayer(long classId, String className, int level, String name,
+                                         Stats stats, int maxHp, int hp, int currentXp, int unspentStatPoints)
+            throws SQLException {
 
+        String normalizedName = normalizeClassName(className);
+
+        return switch (normalizedName) {
+            case "WARRIOR" -> new Warrior(level, name, stats, maxHp, hp, classId, className, currentXp, unspentStatPoints);
+            case "WIZARD" -> new Wizard(level, name, stats, maxHp, hp, classId, className, currentXp, unspentStatPoints);
+            default ->  throw new SQLException("Unsupported player class: " + className);
+        };
+    }
+
+    // ----- Migration -----
+
+    /**
+     * Migrates legacy enum-based rows to the class catalog foreign key.
+     *
+     * @throws SQLException if migration fails
+     */
+    private void migrateLegacyTypeColumn() throws SQLException {
+        try (Connection con = getConnection()) {
+            if (!hasColumn(con, "characters", "class_id")) {
+                try (Statement stmt = con.createStatement()) {
+                    stmt.execute("ALTER TABLE characters ADD COLUMN class_id BIGINT NULL");
+                }
+            }
+
+            if (hasColumn(con, "characters", "type")) {
+                String sql = """
+                UPDATE characters c
+                JOIN classes cl ON LOWER(cl.name) = LOWER(
+                    CASE c.type
+                        WHEN 'WARRIOR' THEN 'Warrior'
+                        WHEN 'WIZARD' THEN 'Wizard'
+                        ELSE c.type
+                    END
+                )
+                SET c.class_id = cl.id
+                WHERE c.class_id IS NULL
+                """;
+
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.executeUpdate();
+                }
+            }
+        }
+    }
+
+    private void migrateTrainingProgressColumn() throws SQLException {
+        try (Connection con = getConnection();
+             Statement stmt = con.createStatement()) {
+
+            if (!hasColumn(con, "characters", "training_progress")) {
+                stmt.execute("ALTER TABLE characters ADD COLUMN training_progress VARCHAR(255) NOT NULL DEFAULT ''");
+            }
+        }
+    }
+
+    private void migrateXpColumns() throws SQLException {
+        try (Connection con = getConnection();
+             Statement stmt = con.createStatement()) {
+
+            if (!hasColumn(con, "characters", "current_xp")) {
+                stmt.execute("ALTER TABLE characters ADD COLUMN current_xp INT NOT NULL DEFAULT 0");
+            }
+
+            if (!hasColumn(con, "characters", "unspent_stat_points")) {
+                stmt.execute("ALTER TABLE characters ADD COLUMN unspent_stat_points INT NOT NULL DEFAULT 0");
+            }
+        }
+    }
+
+
+    // ----- Helpers -----
+
+    /**
+     * Normalizes a class name for runtime branching.
+     *
+     * @param className persisted class name
+     * @return normalized uppercase class name
+     */
+    private String normalizeClassName(String className) {
+        return className == null ? "" : className.trim().toUpperCase();
+    }
 
     /**
      * Opens a new database connection.
@@ -265,5 +432,68 @@ public  class CharacterRepository {
         );
     }
 
+    private String serializeTrainingProgress(EnumMap<Stat, Integer> trainingProgress) {
+        if (trainingProgress == null || trainingProgress.isEmpty()) {
+            return "";
+        }
 
+        StringBuilder sb = new StringBuilder();
+
+        for (Stat stat : Stat.values()) {
+            int value = trainingProgress.getOrDefault(stat, 0);
+
+            if (sb.length() > 0) {
+                sb.append(";");
+            }
+
+            sb.append(stat.name()).append("=").append(value);
+        }
+
+        return sb.toString();
+    }
+
+    private EnumMap<Stat, Integer> deserializeTrainingProgress(String value) {
+        EnumMap<Stat, Integer> trainingProgress = new EnumMap<>(Stat.class);
+
+        if (value == null || value.isBlank()) {
+            return trainingProgress;
+        }
+
+        String[] entries = value.split(";");
+
+        for (String entry : entries) {
+            String[] parts = entry.split("=");
+
+            if (parts.length != 2) {
+                continue;
+            }
+
+            try {
+                Stat stat = Stat.valueOf(parts[0].trim());
+                int progress = Integer.parseInt(parts[1].trim());
+                trainingProgress.put(stat, progress);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        return trainingProgress;
+    }
+
+
+    /**
+     * Checks whether a table contains one specific column.
+     *
+     * @param con open connection
+     * @param tableName table name
+     * @param columnName column name
+     * @return true when the column exists
+     * @throws SQLException if metadata access fails
+     */
+    private boolean hasColumn(Connection con, String tableName, String columnName) throws SQLException {
+        DatabaseMetaData metaData = con.getMetaData();
+
+        try (ResultSet rs = metaData.getColumns(con.getCatalog(), null, tableName, columnName)) {
+            return rs.next();
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package model.entities.evilaaaneighbours;
 
+import main_logic.dice.DamageDice;
+import main_logic.dice.Die;
 import main_logic.enums.Stat;
 import model.entities.Stats;
 
@@ -7,6 +9,8 @@ import model.entities.Stats;
  * A hostile mage enemy based on the SRD mage stat block.
  */
 public class EnemyMage extends Enemy {
+
+    private static final DamageDice FIREBOLT_DAMAGE = new DamageDice(1, Die.D10);
 
     public EnemyMage() {
         super("Mage", buildStats(), 40, 12, 40);
@@ -26,5 +30,20 @@ public class EnemyMage extends Enemy {
     @Override
     public String getTypeName() {
         return "Mage";
+    }
+
+    @Override
+    public int rollDamage(boolean critical) {
+        return Math.max(0, FIREBOLT_DAMAGE.roll(critical));
+    }
+
+    @Override
+    public int getAttackModifier() {
+        return stats.getModifier(Stat.INT);
+    }
+
+    @Override
+    public int getXpReward(){
+        return 2300;
     }
 }

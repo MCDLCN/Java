@@ -1,0 +1,321 @@
+	@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+left to right direction
+
+title Chronicle of Gaia - UML class diagram
+
+package "main_logic" {
+  class Main
+
+  class Game {
+    - menu : Menu
+    - gameSessionService : GameSessionService
+    - session : GameSession
+    + start()
+    + play()
+  }
+
+  class Menu
+
+  class Board {
+    - board : List<Tile>
+    + getTile(index : int) : Tile
+    + applyTileRows(rows)
+    + toTileRows()
+  }
+}
+
+package "main_logic.session" {
+  class GameSession {
+    - characterId : long
+    - saveId : long
+    - player : PlayerCharacter
+    - board : Board
+    - pendingLevelUp : boolean
+  }
+}
+
+package "main_logic.service" {
+  class CombatService {
+    + startFight(player : PlayerCharacter, enemy : Enemy) : EncounterResult
+  }
+
+  class GameSessionService {
+    - classRepository : ClassRepository
+    - characterRepository : CharacterRepository
+    - boardRepository : BoardRepository
+    - inventoryRepository : InventoryRepository
+  }
+
+  class InventoryConsoleService <<utility>> {
+    {static} + chooseInventoryEntry(player : PlayerCharacter) : InventoryEntry
+    {static} + applyCombatItemInteraction(player : PlayerCharacter, enemy : Enemy, entry : InventoryEntry) : boolean
+    {static} + applyItemInteraction(player : PlayerCharacter, entry : InventoryEntry) : boolean
+  }
+}
+
+package "tile" {
+  interface Tile {
+    + describe() : String
+    + onEnter(session : GameSession) : EncounterResult
+    + printPostTileActions(startIndex : int) : int
+    + handlePostTileAction(session : GameSession, choice : int) : boolean
+  }
+
+  class EmptyTile
+  class ChestTile {
+    {static} - LOOT_GENERATOR : ChestLootGenerator
+  }
+  class EnemyTile {
+    - enemyT : EnemyType
+    + getEnemyType() : EnemyType
+  }
+}
+
+package "model.entities" {
+  class Stats
+
+  abstract class Creature {
+    - name : String
+    - stats : Stats
+    # maxHp : int
+    # hp : int
+    + getAc() : int
+    + getHp() : int
+    + setHp(hp : int)
+  }
+
+  class Equipment {
+    - armour : Armour
+    - shield : Shield
+    - weapon : Weapon
+    - scroll : Scroll
+  }
+}
+
+package "model.entities.classes" {
+  abstract class PlayerCharacter {
+    # equipment : Equipment
+    # level : int
+    - currentXp : int
+    # hitDie : int
+    # position : int
+    - inventory : Inventory
+    - classId : long
+    - className : String
+    - trainingProgress : EnumMap<Stat, Integer>
+    # unspentStatPoints : int
+    + canEquip(item : Item) : boolean
+    + getAttackModifier() : int
+    + rollAttackDamage(critical : boolean) : int
+    + gainXp(amount : int) : int
+    + rest() : int
+    + train(stat : Stat) : TrainingResult
+    + spendStatPoint(stat : Stat) : boolean
+    + characterInspection() : String
+  }
+
+  class Warrior
+  class Wizard
+
+  enum TrainingResult {
+    PROGRESS
+    INCREASED
+    CAPPED
+  }
+}
+
+package "model.entities.evilaaaneighbours" {
+  abstract class Enemy {
+    # ac : int
+    + rollDamage(critical : boolean) : int
+    + getAttackModifier() : int
+    + getXpReward() : int
+  }
+
+  class Goblin
+  class Bandit
+  class EnemyMage
+  class Dragon
+
+  class EnemyFactory <<utility>> {
+    {static} + create(type : EnemyType) : Enemy
+  }
+}
+
+package "model.inventory" {
+  class Inventory {
+    - items : List<InventoryEntry>
+    + addItem(item : Item, quantity : int)
+    + removeEntry(entry : InventoryEntry, quantity : int)
+    + findEntry(code : ItemCode) : Optional<InventoryEntry>
+    + getEntries() : List<InventoryEntry>
+  }
+
+  class InventoryEntry {
+    - item : Item
+    - quantity : int
+    - equipped : boolean
+    - inventoryRowId : Long
+  }
+}
+
+package "model.items" {
+  abstract class Item {
+    - code : ItemCode
+    + getCode() : ItemCode
+    + isStackable() : boolean
+  }
+
+  class ItemDefinition
+  class ItemFactory <<utility>>
+  class ChestLootGenerator {
+    + generateLoot(player : PlayerCharacter, board : Board) : LootResult
+  }
+
+  class LootResult
+}
+
+package "model.items.consumables" {
+  abstract class Potion
+  class HealingPotion
+  class StandardHealingPotion
+  class LargeHealingPotion
+  class DamagePotion
+}
+
+package "model.items.offensives" {
+  abstract class OffensiveEquipment
+  class Weapon
+}
+
+package "model.items.defensives" {
+  abstract class DefensiveEquipment
+  class Armour
+  class Shield
+}
+
+package "model.items.scrolls" {
+  abstract class Scroll
+  class FireballScroll
+  class LightningBoltScroll
+}
+
+package "persistence" {
+  class CharacterRepository
+  class BoardRepository
+  class InventoryRepository
+  class ClassRepository
+}
+
+package "dto" {
+  class CharacterSummary
+  class LoadedGame
+  class CharacterClassData
+}
+
+package "main_logic.enums" {
+  enum EncounterResult
+  enum EnemyType
+  enum Stat
+  enum ItemCode
+  enum MainChoice
+}
+
+Main --> Game
+Game *-- Menu
+Game *-- GameSessionService
+Game o-- GameSession
+Game ..> InventoryConsoleService
+
+GameSession *-- Board
+GameSession *-- PlayerCharacter
+
+Board *-- "1..*" Tile
+Tile <|.. EmptyTile
+Tile <|.. ChestTile
+Tile <|.. EnemyTile
+
+ChestTile ..> ChestLootGenerator
+EnemyTile ..> CombatService
+EnemyTile ..> EnemyFactory
+EnemyTile --> EnemyType
+Tile ..> EncounterResult
+
+Creature *-- Stats
+Creature <|-- PlayerCharacter
+Creature <|-- Enemy
+
+PlayerCharacter *-- Equipment
+PlayerCharacter *-- Inventory
+PlayerCharacter --> TrainingResult
+PlayerCharacter ..> Stat
+Warrior --|> PlayerCharacter
+Wizard --|> PlayerCharacter
+
+Enemy <|-- Goblin
+Enemy <|-- Bandit
+Enemy <|-- EnemyMage
+Enemy <|-- Dragon
+EnemyFactory ..> EnemyType
+EnemyFactory ..> Enemy
+
+Inventory *-- "0..*" InventoryEntry
+InventoryEntry *-- Item
+
+Item <|-- Potion
+Item <|-- OffensiveEquipment
+Item <|-- DefensiveEquipment
+Item <|-- Scroll
+Item ..> ItemCode
+
+Potion <|-- HealingPotion
+Potion <|-- DamagePotion
+HealingPotion <|-- StandardHealingPotion
+HealingPotion <|-- LargeHealingPotion
+
+OffensiveEquipment <|-- Weapon
+DefensiveEquipment <|-- Armour
+DefensiveEquipment <|-- Shield
+Scroll <|-- FireballScroll
+Scroll <|-- LightningBoltScroll
+
+Equipment o-- Armour
+Equipment o-- Shield
+Equipment o-- Weapon
+Equipment o-- Scroll
+
+GameSessionService *-- CharacterRepository
+GameSessionService *-- BoardRepository
+GameSessionService *-- InventoryRepository
+GameSessionService *-- ClassRepository
+GameSessionService ..> GameSession
+GameSessionService ..> CharacterClassData
+GameSessionService ..> CharacterSummary
+GameSessionService ..> LoadedGame
+
+CharacterRepository ..> PlayerCharacter
+CharacterRepository ..> Warrior
+CharacterRepository ..> Wizard
+CharacterRepository ..> LoadedGame
+CharacterRepository ..> CharacterSummary
+BoardRepository ..> Board
+InventoryRepository ..> InventoryEntry
+InventoryRepository ..> Item
+ClassRepository ..> CharacterClassData
+
+CombatService ..> PlayerCharacter
+CombatService ..> Enemy
+CombatService ..> InventoryConsoleService
+InventoryConsoleService ..> PlayerCharacter
+InventoryConsoleService ..> Enemy
+InventoryConsoleService ..> InventoryEntry
+
+ItemFactory ..> ItemDefinition
+ChestLootGenerator ..> ItemFactory
+ChestLootGenerator ..> Board
+ChestLootGenerator ..> PlayerCharacter
+
+@enduml

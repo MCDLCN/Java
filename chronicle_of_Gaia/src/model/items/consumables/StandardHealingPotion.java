@@ -1,10 +1,9 @@
-package model.items.consummables;
+package model.items.consumables;
 
 import main_logic.dice.DamageDice;
 import main_logic.dice.Die;
 import main_logic.enums.ItemCode;
 import model.entities.Creature;
-import model.items.consumables.HealingPotion;
 
 /**
  * Standard healing potion based on the SRD potion of healing.

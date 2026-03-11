@@ -1,164 +1,309 @@
-# CrawlInMyDungeon (Java)
 
-Dungeon crawler based on DND.
+# CrawlInMyDungeon
 
-------------------------------------------------------------------------
+A **console-based dungeon crawler written in Java**, inspired by Dungeons & Dragons mechanics.  
+The project focuses on clean architecture, separation of concerns, and extensible game systems.
 
-## Architecture Overview
+---
 
-The project follows a separation of concerns:
+## Features
 
--   **Game** → Orchestrates gameplay and owns runtime state.
--   **Board** → Represents the world (tiles only).
--   **Character hierarchy** → Player and enemies.
--   **Items hierarchy** → Equipment and consumables.
--   **Dice system** → General randomness vs combat damage.
--   **Menu / Console** → User interaction layer.
+- Turn-based **combat system**
+- **Tile-based board** exploration
+- **Inventory and equipment** management
+- **Experience and leveling** system
+- **Stat training and resting**
+- **Character inspection**
+- **Save / load persistence**
+- Modular architecture with services and repositories
 
-------------------------------------------------------------------------
+---
+
+## UML Diagram
+
+A UML class diagram describing the current architecture is provided as **PlantUML plaintext**.
+
+File:
+
+`chronicle_of_gaia.puml`
+
+You can render it with:
+
+- https://www.planttext.com/
+
+---
+
+## Project Architecture
+
+The project is structured into clear layers:
+
+| Layer | Responsibility |
+|------|---------------|
+| **Game** | Orchestrates gameplay and runtime flow |
+| **GameSession** | Stores current play session state |
+| **Board / Tiles** | World representation |
+| **Entities** | Player and enemy logic |
+| **Items / Inventory** | Equipment and consumables |
+| **Services** | Combat, session management |
+| **Repositories** | Persistence |
+| **UI** | Console interaction |
+
+---
 
 ## Project Structure
 
-    src/
-     ├── main_logic/
-     │    ├── Game.java        → Game loop, win logic, player position
-     │    ├── Board.java       → Board generation (ArrayList<Tile>)
-     │    ├── Dice.java        → General purpose dice
-     │
-     ├── model.entities/
-     │    ├── Character.java   → Abstract base class
-     │    ├── classes/
-     │    │    ├── Wizard.java
-     │    │    └── Warrior.java
-     │    └── evilaaaneighbours/
-     │         ├── Goblin.java
-     │         └── Bandit.java
-     │
-     ├── tiles/
-     │    ├── Tile.java        → Abstract tile
-     │    ├── EmptyTile.java
-     │    ├── EnemyTile.java
-     │    └── ChestTile.java
-     │
-     ├── model.items/
-     │    ├── OffensiveEquipment.java
-     │    ├── DefensiveEquipment.java
-     │    ├── armours/
-     │    │    └── Armour.java
-     │    ├── weapons/
-     │    ├── potions/
-     │
-     ├── ui/
-     │    ├── Menu.java
-     │    └── Console.java
-
-------------------------------------------------------------------------
-
-### Board Representation
-
-The board is implemented as:
-
-``` java
-ArrayList<Tile>
+```
+src/
+ ├── main_logic/
+ │    ├── Game.java
+ │    ├── Board.java
+ │    ├── Dice.java
+ │
+ │    ├── session/
+ │    │    └── GameSession.java
+ │
+ │    ├── service/
+ │    │    ├── CombatService.java
+ │    │    ├── GameSessionService.java
+ │    │    └── InventoryConsoleService.java
+ │
+ │    └── enums/
+ │         ├── EncounterResult.java
+ │         ├── EnemyType.java
+ │         ├── Stat.java
+ │         └── ItemCode.java
+ │
+ ├── model/
+ │    ├── entities/
+ │    │    ├── Creature.java
+ │    │    ├── Equipment.java
+ │    │    ├── Stats.java
+ │    │    ├── classes/
+ │    │    │    ├── PlayerCharacter.java
+ │    │    │    ├── Warrior.java
+ │    │    │    └── Wizard.java
+ │    │    └── evilaaaneighbours/
+ │    │         ├── Enemy.java
+ │    │         ├── Goblin.java
+ │    │         ├── Bandit.java
+ │    │         └── EnemyMage.java
+ │
+ │    ├── inventory/
+ │    │    ├── Inventory.java
+ │    │    └── InventoryEntry.java
+ │
+ │    └── items/
+ │         ├── Item.java
+ │         ├── ItemFactory.java
+ │         ├── ItemDefinition.java
+ │         ├── consumables/
+ │         ├── offensives/
+ │         ├── defensives/
+ │         └── scrolls/
+ │
+ ├── tiles/
+ │    ├── Tile.java
+ │    ├── EmptyTile.java
+ │    ├── EnemyTile.java
+ │    └── ChestTile.java
+ │
+ ├── persistence/
+ │    ├── CharacterRepository.java
+ │    ├── InventoryRepository.java
+ │    ├── BoardRepository.java
+ │    └── ClassRepository.java
+ │
+ └── ui/
+      ├── Menu.java
+      └── Console.java
 ```
 
--   Board size is configurable via constructor.
--   Tiles are instantiated at game start.
--   Each tile defines its own behavior via polymorphism.
+---
 
-------------------------------------------------------------------------
+## Gameplay Systems
 
-### Movement & Win Logic
+### Combat
 
-Movement flow:
+Combat is handled by `CombatService`.
 
-1.  Player rolls using `Dice`.
-2.  `Game` asks `Board` to calculate new position.
-3.  If new position \> last tile index → `OutOfBoardException`.
-4.  Overshoot = win.
-5.  Exact landing on last tile = win.
-6.  Otherwise, player interacts with tile.
+Rules:
 
-The exception is intentionally used to represent a valid game-ending
-state (overshoot victory).
+- Attack roll: `d20 + modifier`
+- **Natural 20**
+  - Automatic hit
+  - Doubles **damage dice only**
+- **Natural 1**
+  - Automatic miss
 
-------------------------------------------------------------------------
+Enemy attack modifiers:
 
-## Combat System (Planned)
+| Enemy | Attack Stat |
+|------|-------------|
+| Goblin | DEX |
+| Bandit | DEX |
+| Enemy Mage | INT |
 
-Combat is not fully implemented yet.
+---
 
-Planned logic:
+### Scroll Mechanics
 
--   When entering an `EnemyTile`, combat begins.
--   Loop continues until:
-    -   Enemy dies → tile becomes empty.
-    -   Player flees successfully.
-    -   Player dies → game over.
+- Scrolls are consumed on **every attack attempt**
+- Scrolls disappear when uses reach **0**
+- Scrolls are automatically **unequipped when depleted**
 
-### Flee Mechanic (Planned)
+---
 
--   Stealth check:
-    -   Player DEX modifier
-    -   Enemy WIS modifier
--   If flee succeeds:
-    -   Player moves back 2 tiles.
--   If flee fails:
-    -   Player skips next turn.
+### Flee Mechanic
 
-------------------------------------------------------------------------
+Escape attempt uses a contested roll:
 
-## Inventory & Items
+```
+Player: d20 + DEX
+Enemy:  d20 + WIS
+```
 
--   Player owns an inventory (collection of model.items).
--   Potions are stored and consumed manually.
--   Chests will:
-    -   Pull random model.items from an item pool.
-    -   Add them to the inventory.
--   Items can be offensive or defensive equipment.
+If successful:
 
-------------------------------------------------------------------------
+- Player escapes combat
 
-## Dice System
+---
 
--   `Dice` → Generic dice roller (movement, checks).
--   `DamageDice` → Dedicated to combat damage/healing.
+### Inventory System
 
-------------------------------------------------------------------------
+Inventory distinguishes between:
 
-## Current Gameplay Flow
+| Type | Handling |
+|----|-----------|
+| Stackable items | Managed by item code |
+| Non‑stackable items | Managed via `InventoryEntry` |
 
-1.  Game initializes:
-    -   Board
-    -   Player class
-2.  Game loop:
-    -   Roll
-    -   Move
-    -   Interact with tile
-    -   Check win/death conditions
-3.  Game ends when:
-    -   Player reaches or overshoots final tile
-    -   Player dies
+Selecting an equipped item **unequips it**.
 
-------------------------------------------------------------------------
+Invalid actions **do not close the inventory menu**.
+
+---
+
+### Training System
+
+Available on **Empty Tiles**.
+
+Rules:
+
+- Each stat requires **2 training actions** to increase
+- Progress is stored **per stat**
+- Stat cap = **20**
+- Cancel option available
+
+Training progress is persisted in saves.
+
+---
+
+### Rest System
+
+Players may rest on empty tiles.
+
+Healing:
+
+```
+Level × HitDie
+```
+
+HP is clamped to `maxHp`.
+
+---
+
+### Experience & Leveling
+
+Enemies grant **XP when defeated**.
+
+Leveling up:
+
+- Recalculates **Max HP**
+- Grants **2 stat points**
+
+Stat points can be distributed freely (up to **20 per stat**).
+
+Increasing **CON** recalculates max HP accordingly.
+
+---
+
+### Character Inspection
+
+Available in the **post‑tile menu**.
+
+Displays:
+
+- Name
+- Class
+- Level
+- HP / Max HP
+- XP progress
+- Stats
+- Training progress
+
+---
+
+## Game Flow
+
+```
+Roll
+ → Move
+ → Tile Interaction
+ → Combat / Rest / Train / Loot
+ → Post‑Tile Menu
+```
+
+Post‑tile options:
+
+- Manage inventory
+- Inspect character
+- Save game
+- Return to main menu
+- Quit game
+
+---
+
+## Win & Loss Conditions
+
+### Victory
+
+Player wins if they:
+
+- Land on the final tile
+- Overshoot the final tile
+
+### Defeat
+
+If the player dies:
+
+- The game **does not autosave**
+- The player may reload the previous save
+
+---
 
 ## Build & Run
 
-``` bash
+```
 mkdir -p out
 javac -d out $(find src -name "*.java")
 java -cp out Main
 ```
 
-------------------------------------------------------------------------
+---
 
-## Status
+## Development Status
 
-✔ Board movement working\
-✔ Win condition implemented (exact + overshoot)\
-✔ OOP hierarchy structured\
-✔ ArrayList-based board\
-⬜ Combat system\
-⬜ Loot generation system\
-⬜ Flee mechanics\
-⬜ Inventory UI
+### Implemented
+
+- Board system
+- Tile system
+- Combat system
+- Enemy types
+- Inventory system
+- Equipment system
+- Scroll mechanics
+- Rest system
+- Training system
+- XP & leveling
+- Character inspection
+- Save / load system

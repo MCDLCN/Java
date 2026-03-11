@@ -1,10 +1,9 @@
-package model.items.consummables;
+package model.items.consumables;
 
 import main_logic.dice.DamageDice;
 import main_logic.dice.Die;
 import main_logic.enums.ItemCode;
 import model.entities.Creature;
-import model.items.consumables.HealingPotion;
 
 /**
  * Large healing potion based on the SRD greater healing potion.

@@ -22,8 +22,8 @@ public abstract class Scroll extends Item {
         return damage;
     }
 
-    public int rollDamage() {
-        return damage.roll();
+    public int rollDamage(boolean critical) {
+        return damage.roll(critical);
     }
 
     public int getUsesRemaining() {
