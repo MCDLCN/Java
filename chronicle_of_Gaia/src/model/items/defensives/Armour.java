@@ -1,6 +1,7 @@
 package model.items.defensives;
 
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 
 /**
  * Defensive equipment that affects Armor Class (AC) depending on armor type and dexterity modifier rules.
@@ -19,7 +20,7 @@ public class Armour extends DefensiveEquipment {
      * @param type type value.
      */
     public Armour(int ac, ItemCode name, String description, ArmourType type) {
-        super(ac, name, description);
+        super(ac, name, description,ItemType.ARMOUR);
         this.type = type;
     }
 
@@ -27,7 +28,7 @@ public class Armour extends DefensiveEquipment {
      * getType operation.
      * @return Requested value.
      */
-    public ArmourType getType() {
+    public ArmourType getArmourType() {
         return type;
     }
 
@@ -35,6 +36,7 @@ public class Armour extends DefensiveEquipment {
     public boolean isStackable() {
         return false;
     }
+
 
     /**
      * Enumeration of the three type of armour there is.

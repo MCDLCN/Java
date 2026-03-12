@@ -2,6 +2,7 @@ package model.items.scrolls;
 
 import main_logic.dice.DamageDice;
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 import model.items.Item;
 
 /**
@@ -13,7 +14,7 @@ public abstract class Scroll extends Item {
     private int usesRemaining;
 
     protected Scroll(ItemCode code, DamageDice damage, int usesRemaining) {
-        super(code);
+        super(code, ItemType.SCROLL);
         this.damage = damage;
         this.usesRemaining = usesRemaining;
     }
@@ -45,4 +46,5 @@ public abstract class Scroll extends Item {
     public boolean isStackable() {
         return false;
     }
+
 }

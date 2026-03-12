@@ -2,6 +2,8 @@ package model.entities.classes;
 
 import main_logic.dice.DamageDice;
 import main_logic.dice.Die;
+import main_logic.enums.CharacterClass;
+import main_logic.enums.ItemType;
 import main_logic.enums.Stat;
 import model.entities.Stats;
 import model.inventory.InventoryEntry;
@@ -21,44 +23,27 @@ public class Wizard extends PlayerCharacter {
     /**
      * Constructor used when creating a new Wizard.
      */
-    public Wizard(int level, String name, Stats stats, long classId, String className) {
-        super(level, name, stats, HIT_DIE, classId, className);
+    public Wizard(int level, String name, Stats stats, long classId) {
+        super(level, name, stats, HIT_DIE, classId, CharacterClass.WIZARD);
+        this.getAllowedItems().add(ItemType.SCROLL);
+        this.getAllowedItems().add(ItemType.ARMOUR);
+        this.getAllowedItems().add(ItemType.SHIELD);
     }
 
     /**
      * Constructor used when loading a Wizard from persistence.
      */
     public Wizard(int level, String name, Stats stats, int maxHp, int hp,
-                  long classId, String className, int currentXp, int unspentStatPoints) {
-        super(level, name, stats, HIT_DIE, maxHp, hp, classId, className, currentXp, unspentStatPoints);
+                  long classId, int currentXp, int unspentStatPoints) {
+        super(level, name, stats, HIT_DIE, maxHp, hp, classId, currentXp, unspentStatPoints, CharacterClass.WIZARD);
+        this.getAllowedItems().add(ItemType.SCROLL);
+        this.getAllowedItems().add(ItemType.ARMOUR);
+        this.getAllowedItems().add(ItemType.SHIELD);
     }
-
-    /**
-     * Rolls the wizard default attack damage.
-     *
-     * <p>This is used when no scroll is equipped.</p>
-     *
-     * @return rolled firebolt damage
-     */
-    public int rollDefaultAttackDamage() {
-        return FIREBOLT_DAMAGE.roll();
-    }
-
-    @Override
-    public String getTypeName() {
-        return getClassName();
-    }
-
 
     @Override
     public boolean canEquip(Item item){
-        if (item instanceof Weapon){
-            return false;
-        }
-        if (item instanceof Scroll){
-            return true;
-        }
-        return true;
+        return getAllowedItems().contains(item.getType());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package model.items.defensives;
 
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 
 /**
  * Defensive equipment representing a shield, typically increasing AC when equipped.
@@ -14,7 +15,7 @@ public class Shield extends DefensiveEquipment{
      * @param description description value.
      */
     public Shield(int ac, ItemCode name, String description) {
-        super(ac, name, description);
+        super(ac, name, description, ItemType.SHIELD);
     }
 
     @Override

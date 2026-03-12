@@ -26,15 +26,7 @@ import java.util.Set;
  *
  * <p>Inventory rows are linked to the player using character_id</p>
  */
-public class InventoryRepository {
-
-    /**
-     * The link to the database and the user/password needed to connect
-     */
-    private static final String URL = "jdbc:mysql://localhost:3306/chronicle_of_gaia";
-    private static final String USER = "gaia";
-    private static final String PASS = "Gaia2026!";
-
+public class InventoryRepository extends BaseRepository{
 
     private final ItemInstanceJsonMapper itemInstanceJsonMapper = new ItemInstanceJsonMapper();
 
@@ -48,16 +40,6 @@ public class InventoryRepository {
     public InventoryRepository() throws SQLException {
         initSchema();
         ensureItemCatalogSynced();
-    }
-
-    /**
-     * Opens a new database connection.
-     *
-     * @return a new SQL connection
-     * @throws SQLException if the connection cannot be established
-     */
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
     }
 
     /**

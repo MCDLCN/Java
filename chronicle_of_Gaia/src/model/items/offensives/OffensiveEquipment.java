@@ -2,6 +2,7 @@ package model.items.offensives;
 
 import main_logic.dice.DamageDice;
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 import model.items.Item;
 
 /**
@@ -18,8 +19,8 @@ public abstract class OffensiveEquipment extends Item {
      * @param name name value.
      * @param damage damage value.
      */
-    protected OffensiveEquipment(ItemCode name, DamageDice damage) {
-        super(name);
+    protected OffensiveEquipment(ItemCode name, DamageDice damage, ItemType itemType) {
+        super(name, itemType);
         this.damage = damage;
     }
 

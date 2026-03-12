@@ -262,6 +262,7 @@ public class Game {
                 menu.showMessage(tile.describe(), Console.ConsoleColor.CYAN);
 
                 GameSession currentSession = session;
+                int currentHp = session.getPlayer().getHp();
                 EncounterResult result = tile.onEnter(this.session);
                 if (result == EncounterResult.VICTORY) {
                     session.getBoard().setEmpty(session.getPlayer().getPosition());
@@ -274,6 +275,7 @@ public class Game {
                 } else if (result == EncounterResult.DEFEAT) {
                     Console.print("You lost, loser", Console.ConsoleColor.GOLD);
                     this.session = currentSession;
+                    this.session.getPlayer().setHp(currentHp);
                     break;
                 }
 
@@ -301,7 +303,7 @@ public class Game {
             Console.print("3) Save");
 
             int nextOption = 4;
-            int lastTileOption = nextOption - 1;
+            int lastTileOption;
 
             if (!tileActionUsed) {
                 lastTileOption = tile.printPostTileActions(nextOption);

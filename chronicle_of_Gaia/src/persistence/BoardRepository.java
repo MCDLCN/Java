@@ -11,11 +11,7 @@ import java.util.Optional;
  * <p>Tiles are stored by linear index (0..63). Only tile type and optional enemy type
  * are persisted. No enemy instances or loot contents are stored here.</p>
  */
-public class BoardRepository {
-
-    private static final String URL = "jdbc:mysql://localhost:3306/chronicle_of_gaia";
-    private static final String USER = "gaia";
-    private static final String PASS = "Gaia2026!";
+public class BoardRepository extends BaseRepository {
 
     /**
      * Creates the repository and ensures required tables exist.
@@ -37,10 +33,6 @@ public class BoardRepository {
 
     /**
      * Represents a single persisted tile.
-     *
-     * @param idx       the tile index (0..63)
-     * @param type      the tile type
-     * @param enemyType the enemy type identifier (only for ENEMY tiles), otherwise empty
      */
     public static class TileRow {
 
@@ -75,15 +67,6 @@ public class BoardRepository {
 
     }
 
-    /**
-     * Opens a new database connection.
-     *
-     * @return a new SQL connection
-     * @throws SQLException if the connection cannot be established
-     */
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
-    }
 
     /**
      * Initializes schema for board persistence.

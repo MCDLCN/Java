@@ -6,21 +6,11 @@ import main_logic.enums.Stat;
 import model.entities.classes.PlayerCharacter;
 import model.entities.evilaaaneighbours.Enemy;
 import model.inventory.InventoryEntry;
-import model.items.Item;
-import model.items.consumables.DamagePotion;
-import model.items.consumables.HealingPotion;
-import model.items.defensives.Armour;
-import model.items.defensives.Shield;
-import model.items.offensives.Weapon;
 import model.items.scrolls.Scroll;
 import utilities.Console;
-
-import java.util.List;
 import java.util.Optional;
-import java.util.Scanner;
 
 import static main_logic.service.InventoryConsoleService.applyCombatItemInteraction;
-import static main_logic.service.InventoryConsoleService.applyItemInteraction;
 
 /**
  * Runs turn-based combat between the player and one enemy.

@@ -2,12 +2,14 @@ package model.items.consumables;
 
 import main_logic.dice.DamageDice;
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 import model.items.Item;
 
 /**
  * Consumable item intended to be stored in inventory and consumed later for an effect such as healing or damage.
  */
 public abstract class Potion extends Item {
+
     /**
      * effectDice field.
      */
@@ -19,7 +21,7 @@ public abstract class Potion extends Item {
      * @param effectDice effectDice value.
      */
     protected Potion(ItemCode name, DamageDice effectDice) {
-        super(name);
+        super(name, ItemType.POTION);
         this.effectDice = effectDice;
     }
 
@@ -42,6 +44,5 @@ public abstract class Potion extends Item {
     public boolean isStackable(){
         return true;
     };
-
 
 }

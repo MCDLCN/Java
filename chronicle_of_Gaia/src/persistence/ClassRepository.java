@@ -1,13 +1,14 @@
 package persistence;
 
 import dto.CharacterClassData;
+import main_logic.enums.CharacterClass;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class ClassRepository {
+public class ClassRepository extends BaseRepository{
 
     public ClassRepository() throws SQLException {
         try (Connection conn = getConnection();
@@ -38,10 +39,14 @@ public class ClassRepository {
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
+
+
             while (rs.next()) {
+                CharacterClass characterClass =
+                        CharacterClass.valueOf(rs.getString("name").trim().toUpperCase());
                 classes.add(new CharacterClassData(
                         rs.getLong("id"),
-                        rs.getString("name")
+                        characterClass
                 ));
             }
         }
@@ -71,7 +76,7 @@ public class ClassRepository {
 
                 return Optional.of(new CharacterClassData(
                         rs.getLong("id"),
-                        rs.getString("name")
+                        CharacterClass.valueOf(rs.getString("name"))
                 ));
             }
         }
@@ -99,7 +104,7 @@ public class ClassRepository {
 
                 return Optional.of(new CharacterClassData(
                         rs.getLong("id"),
-                        rs.getString("name")
+                        CharacterClass.valueOf(rs.getString("name"))
                 ));
             }
         }
@@ -133,11 +138,4 @@ public class ClassRepository {
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/chronicle_of_gaia",
-                "gaia",
-                "Gaia2026!"
-        );
-    }
 }

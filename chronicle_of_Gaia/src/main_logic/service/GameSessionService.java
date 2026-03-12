@@ -26,6 +26,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+import static main_logic.enums.CharacterClass.WARRIOR;
+import static main_logic.enums.CharacterClass.WIZARD;
+
 /**
  * Coordinates persistence workflows for creating, loading, saving,
  * listing, and deleting game sessions.
@@ -190,12 +193,11 @@ public class GameSessionService {
      * @return created player character
      */
     private PlayerCharacter createPlayer(CharacterClassData selectedClass, int level, String name, Stats stats) {
-        String normalizedName = normalizeClassName(selectedClass.name());
 
-        return switch (normalizedName) {
-            case "WARRIOR" -> new Warrior(level, name, stats, selectedClass.id(), selectedClass.name());
-            case "WIZARD" -> new Wizard(level, name, stats, selectedClass.id(), selectedClass.name());
-            default -> throw new IllegalArgumentException("Unsupported player class: " + selectedClass.name());
+        return switch (selectedClass.getName()) {
+            case WARRIOR -> new Warrior(level, name, stats, selectedClass.id());
+            case WIZARD -> new Wizard(level, name, stats, selectedClass.id());
+            default -> throw new IllegalArgumentException("Unsupported player class: " + selectedClass.getName());
         };
     }
 
@@ -224,13 +226,4 @@ public class GameSessionService {
         }
     }
 
-    /**
-     * Normalizes a class name for runtime branching.
-     *
-     * @param className class name loaded from the catalog
-     * @return normalized uppercase class name
-     */
-    private String normalizeClassName(String className) {
-        return className == null ? "" : className.trim().toUpperCase();
-    }
 }

@@ -2,12 +2,15 @@ package model.entities.classes;
 
 import main_logic.dice.DamageDice;
 import main_logic.dice.Die;
+import main_logic.enums.CharacterClass;
+import main_logic.enums.ItemType;
 import main_logic.enums.Stat;
 import model.entities.Stats;
 import model.inventory.InventoryEntry;
 import model.items.Item;
 import model.items.offensives.Weapon;
 import model.items.scrolls.Scroll;
+
 
 /**
  * Durable melee-focused player character class.
@@ -20,32 +23,27 @@ public class Warrior extends PlayerCharacter {
     /**
      * Constructor used when creating a new Warrior.
      */
-    public Warrior(int level, String name, Stats stats, long classId, String className) {
-        super(level, name, stats, HIT_DIE, classId, className);
+    public Warrior(int level, String name, Stats stats, long classId) {
+        super(level, name, stats, HIT_DIE, classId, CharacterClass.WARRIOR);
+        this.getAllowedItems().add(ItemType.ARMOUR);
+        this.getAllowedItems().add(ItemType.WEAPON);
+        this.getAllowedItems().add(ItemType.SHIELD);
     }
 
     /**
      * Constructor used when loading a Warrior from persistence.
      */
     public Warrior(int level, String name, Stats stats, int maxHp, int hp,
-                   long classId, String className, int currentXp, int unspentStatPoints) {
-        super(level, name, stats, HIT_DIE, maxHp, hp, classId, className, currentXp, unspentStatPoints);
-    }
-
-    @Override
-    public String getTypeName() {
-        return getClassName();
+                   long classId, int currentXp, int unspentStatPoints) {
+        super(level, name, stats, HIT_DIE, maxHp, hp, classId, currentXp, unspentStatPoints, CharacterClass.WARRIOR);
+        this.getAllowedItems().add(ItemType.ARMOUR);
+        this.getAllowedItems().add(ItemType.WEAPON);
+        this.getAllowedItems().add(ItemType.SHIELD);
     }
 
     @Override
     public boolean canEquip(Item item){
-        if (item instanceof Weapon){
-            return true;
-        }
-        if (item instanceof Scroll){
-            return false;
-        }
-        return true;
+        return getAllowedItems().contains(item.getType());
     }
 
     @Override

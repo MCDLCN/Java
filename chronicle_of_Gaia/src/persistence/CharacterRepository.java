@@ -2,6 +2,7 @@ package persistence;
 
 import dto.CharacterSummary;
 import dto.LoadedGame;
+import main_logic.enums.CharacterClass;
 import model.entities.Stats;
 import model.entities.classes.PlayerCharacter;
 import model.entities.classes.Warrior;
@@ -14,7 +15,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 
-public class CharacterRepository {
+public class CharacterRepository extends BaseRepository{
     public CharacterRepository() throws SQLException {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
@@ -83,7 +84,7 @@ public class CharacterRepository {
                 ps.setLong(index++, saveId);
 
                 if (hasTypeColumn) {
-                    ps.setString(index++, normalizeClassName(player.getClassName()));
+                    ps.setString(index++, player.getCharacterClass().name());
                 }
 
                 ps.setLong(index++, player.getClassId());
@@ -177,7 +178,7 @@ public class CharacterRepository {
                 ps.setLong(index++, saveId);
 
                 if (hasTypeColumn) {
-                    ps.setString(index++, normalizeClassName(player.getClassName()));
+                    ps.setString(index++, player.getCharacterClass().name());
                 }
 
                 ps.setLong(index++, player.getClassId());
@@ -231,7 +232,7 @@ public class CharacterRepository {
                 long saveId = rs.getLong("save_id");
                 String name = rs.getString("name");
                 long classId = rs.getLong("class_id");
-                String className = rs.getString("class_name");
+                CharacterClass characterClass = CharacterClass.valueOf(rs.getString("class_name").trim().toUpperCase());
                 int level = rs.getInt("level");
                 int currentXp = rs.getInt("current_xp");
                 int unspentStatPoints = rs.getInt("unspent_stat_points");
@@ -246,7 +247,7 @@ public class CharacterRepository {
                 stats.set(Stat.WIS, rs.getInt("wis"));
                 stats.set(Stat.CHA, rs.getInt("cha"));
 
-                PlayerCharacter player = createPlayer(classId, className, level, name, stats, maxHp, hp,  currentXp, unspentStatPoints);
+                PlayerCharacter player = createPlayer(classId, characterClass, level, name, stats, maxHp, hp,  currentXp, unspentStatPoints);
 
                 EnumMap<Stat, Integer> trainingProgress =
                         deserializeTrainingProgress(rs.getString("training_progress"));
@@ -323,7 +324,7 @@ public class CharacterRepository {
      * Rebuilds one concrete player class from persisted class metadata.
      *
      * @param classId persisted class id
-     * @param className persisted class name
+     * @param characterClass persisted class name
      * @param level persisted level
      * @param name persisted character name
      * @param stats persisted stats
@@ -332,16 +333,15 @@ public class CharacterRepository {
      * @return reconstructed player instance
      * @throws SQLException when the class is unknown
      */
-    private PlayerCharacter createPlayer(long classId, String className, int level, String name,
+    private PlayerCharacter createPlayer(long classId, CharacterClass characterClass, int level, String name,
                                          Stats stats, int maxHp, int hp, int currentXp, int unspentStatPoints)
             throws SQLException {
 
-        String normalizedName = normalizeClassName(className);
 
-        return switch (normalizedName) {
-            case "WARRIOR" -> new Warrior(level, name, stats, maxHp, hp, classId, className, currentXp, unspentStatPoints);
-            case "WIZARD" -> new Wizard(level, name, stats, maxHp, hp, classId, className, currentXp, unspentStatPoints);
-            default ->  throw new SQLException("Unsupported player class: " + className);
+        return switch (characterClass) {
+            case WARRIOR -> new Warrior(level, name, stats, maxHp, hp, classId, currentXp, unspentStatPoints);
+            case WIZARD -> new Wizard(level, name, stats, maxHp, hp, classId, currentXp, unspentStatPoints);
+            default ->  throw new SQLException("Unsupported player class: " + characterClass);
         };
     }
 
@@ -416,20 +416,6 @@ public class CharacterRepository {
      */
     private String normalizeClassName(String className) {
         return className == null ? "" : className.trim().toUpperCase();
-    }
-
-    /**
-     * Opens a new database connection.
-     *
-     * @return a new SQL connection to the Chronicle of Gaia database
-     * @throws SQLException if the connection cannot be established
-     */
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/chronicle_of_gaia",
-                "gaia",
-                "Gaia2026!"
-        );
     }
 
     private String serializeTrainingProgress(EnumMap<Stat, Integer> trainingProgress) {

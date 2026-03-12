@@ -8,8 +8,8 @@ import utilities.Console;
 
 public class EmptyTile implements Tile {
 
-    private static final int REST_OPTION = 3;
-    private static final int TRAIN_OPTION = 4;
+    private static final int REST_OPTION = 4;
+    private static final int TRAIN_OPTION = 5;
 
     @Override
     public String describe() {

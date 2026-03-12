@@ -1,6 +1,7 @@
 package model.items.defensives;
 
 import main_logic.enums.ItemCode;
+import main_logic.enums.ItemType;
 import model.items.Item;
 
 /**
@@ -22,8 +23,8 @@ public abstract class DefensiveEquipment extends Item {
      * @param name name value.
      * @param description description value.
      */
-    protected DefensiveEquipment(int ac, ItemCode name, String description) {
-        super(name);
+    protected DefensiveEquipment(int ac, ItemCode name, String description, ItemType itemType) {
+        super(name, itemType);
         this.ac = ac;
         this.description = description;
     }

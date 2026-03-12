@@ -26,6 +26,7 @@ public class Board {
     private ArrayList<Tile> board;
 
 
+
     // ------ Constructor ------
 
     /**
@@ -34,11 +35,7 @@ public class Board {
     public Board(int size) {
         this.board = new ArrayList<>(size);
 
-        for (int i = 0; i < size; i++) {
-            board.add(new EmptyTile());
-        }
-
-        fill();
+        fill(size);
     }
 
     // ------ Getters ------
@@ -88,19 +85,19 @@ public class Board {
     /**
      * Populates the board with randomly selected tiles (enemies, chests, or empty tiles).
      */
-    public void fill() {
-        for (int i = 0; i < board.size(); i++) {
+    public void fill(int size) {
+        for (int i = 0; i < size; i++) {
             int roll = random.nextInt(3);
 
             if (i == 0){
-                board.set(i, new EmptyTile());
+                board.add(new EmptyTile());
             } else {
                 if (roll == 0) {
-                    board.set(i, new EmptyTile());
+                    board.add(new EmptyTile());
                 } else if (roll == 1) {
-                    board.set(i, new ChestTile());
+                    board.add(new ChestTile());
                 } else {
-                    board.set(i, new EnemyTile(pickEnemyType(i)));
+                    board.add(new EnemyTile(pickEnemyType(i)));
                 }
             }
         }

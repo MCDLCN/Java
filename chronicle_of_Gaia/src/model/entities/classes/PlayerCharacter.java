@@ -1,6 +1,8 @@
 package model.entities.classes;
 
 import main_logic.dice.Dice;
+import main_logic.enums.CharacterClass;
+import main_logic.enums.ItemType;
 import main_logic.enums.Stat;
 import model.entities.Creature;
 import model.entities.Stats;
@@ -13,6 +15,8 @@ import model.items.offensives.Weapon;
 import model.items.scrolls.Scroll;
 
 import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -36,9 +40,11 @@ public abstract class PlayerCharacter extends Creature {
     protected int position;
     private final Inventory inventory = new Inventory();
     private final long classId;
-    private final String className;
     private final EnumMap<Stat, Integer> trainingProgress = new EnumMap<>(Stat.class);
     protected int unspentStatPoints;
+    private static final int MAX_LEVEL = 20;
+    private final CharacterClass characterClass;
+    private Set<ItemType> allowedItems = new HashSet<>();
 
     //----- Constructors -----
 
@@ -51,18 +57,18 @@ public abstract class PlayerCharacter extends Creature {
      * @param stats the generated stats
      * @param hitDie the class hit die
      * @param classId persisted class id
-     * @param className persisted class name
+     * @param characterClass persisted class name
      */
-    protected PlayerCharacter(int level, String name, Stats stats, int hitDie, long classId, String className) {
+    protected PlayerCharacter(int level, String name, Stats stats, int hitDie, long classId, CharacterClass characterClass) {
         super(name, stats,
                 computeMaxHp(level, stats, hitDie),
                 computeMaxHp(level, stats, hitDie));
         this.level = level;
         this.hitDie = hitDie;
         this.classId = classId;
-        this.className = className;
         this.currentXp = 0;
         this.unspentStatPoints = 0;
+        this.characterClass = characterClass;
     }
 
     /**
@@ -75,15 +81,15 @@ public abstract class PlayerCharacter extends Creature {
      * @param maxHp the stored maximum HP
      * @param hp the stored current HP
      * @param classId persisted class id
-     * @param className persisted class name
+     * @param characterClass persisted class name
      */
     protected PlayerCharacter(int level, String name, Stats stats, int hitDie, int maxHp, int hp,
-                              long classId, String className, int currentXp, int unspentStatPoints) {
+                              long classId, int currentXp, int unspentStatPoints, CharacterClass characterClass) {
         super(name, stats, maxHp, hp);
         this.level = level;
         this.hitDie = hitDie;
         this.classId = classId;
-        this.className = className;
+        this.characterClass = characterClass;
         this.currentXp = currentXp;
         this.unspentStatPoints = unspentStatPoints;
     }
@@ -123,7 +129,7 @@ public abstract class PlayerCharacter extends Creature {
         if (armour == null) {
             baseAc = 10 + dexMod;
         } else {
-            baseAc = switch (armour.getType()) {
+            baseAc = switch (armour.getArmourType()) {
                 case HEAVY -> armour.getAc();
                 case MEDIUM -> armour.getAc() + Math.min(dexMod, 2);
                 case LIGHT -> armour.getAc() + dexMod;
@@ -156,9 +162,12 @@ public abstract class PlayerCharacter extends Creature {
      *
      * @return the class name
      */
-    public String getClassName() {
-        return className;
+    public CharacterClass getCharacterClass() {
+        return this.characterClass;
     }
+
+    @Override
+    public String getTypeName(){ return this.characterClass.name();}
 
     public abstract boolean canEquip(Item item);
 
@@ -183,17 +192,6 @@ public abstract class PlayerCharacter extends Creature {
 
 
     /**
-     * Returns the XP required to reach the next level.
-     */
-    public int getXpForNextLevel() {
-        if (level >= 20) {
-            return currentXp;
-        }
-
-        return determineLevelFromXp(level + 1);
-    }
-
-    /**
      * Rolls the damage of the currently used attack.
      */
     public abstract int rollAttackDamage(boolean critical);
@@ -204,6 +202,10 @@ public abstract class PlayerCharacter extends Creature {
 
     public int getUnspentStatPoints() {
         return unspentStatPoints;
+    }
+
+    public Set<ItemType> getAllowedItems() {
+        return allowedItems;
     }
 
     //----- Setters -----
@@ -322,28 +324,55 @@ public abstract class PlayerCharacter extends Creature {
         return getHp() - hpBefore;
     }
 
+    // ----- XP handler -----
+
+    /**
+     * Returns the XP required to reach the next level.
+     */
+    public int getXpForNextLevel() {
+        if (level >= MAX_LEVEL) {
+            return XP_FOR_LEVEL[MAX_LEVEL];
+        }
+        return XP_FOR_LEVEL[level + 1];
+    }
+
+
+    public int getXpRemainingToLevel() {
+        return getXpForNextLevel() - currentXp;
+    }
+
     private int determineLevelFromXp(int xp) {
-        if (xp >= 35500) return 20;
-        if (xp >= 30500) return 19;
-        if (xp >= 26500) return 18;
-        if (xp >= 22500) return 17;
-        if (xp >= 19500) return 16;
-        if (xp >= 16500) return 15;
-        if (xp >= 14000) return 14;
-        if (xp >= 12000) return 13;
-        if (xp >= 10000) return 12;
-        if (xp >= 8500) return 11;
-        if (xp >= 6400) return 10;
-        if (xp >= 4800) return 9;
-        if (xp >= 3400) return 8;
-        if (xp >= 2300) return 7;
-        if (xp >= 1400) return 6;
-        if (xp >= 650) return 5;
-        if (xp >= 270) return 4;
-        if (xp >= 90) return 3;
-        if (xp >= 30) return 2;
+        for (int level = MAX_LEVEL; level >= 1; level--) {
+            if (xp >= XP_FOR_LEVEL[level]) {
+                return level;
+            }
+        }
         return 1;
     }
+
+    private static final int[] XP_FOR_LEVEL = {
+            0,      // unused (no level 0)
+            0,      // level 1
+            30,
+            90,
+            270,
+            650,
+            1400,
+            2300,
+            3400,
+            4800,
+            6400,
+            8500,
+            10000,
+            12000,
+            14000,
+            16500,
+            19500,
+            22500,
+            26500,
+            30500,
+            35500
+    };
 
     /**
      * Awards XP and applies all crossed level-ups.
@@ -425,7 +454,7 @@ public abstract class PlayerCharacter extends Creature {
      */
     public String characterInspection() {
         return "Name: " + getName()
-                + "\nClass: " + getClassName()
+                + "\nClass: " + getCharacterClass().name()
                 + "\nLevel: " + getLevel()
                 + "\nHP: " + getHp() + "/" + getMaxHp()
                 + "\nXP: " + getCurrentXp() + " / " + getXpForNextLevel()
