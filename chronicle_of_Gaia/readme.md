@@ -22,8 +22,11 @@ Create a `db.properties` file for the database connection.
 Example:
 
 db.url=jdbc:mysql://localhost:3306/chronicle_of_gaia
+
 db.user=root
+
 db.password=your_password
+
 db.driver=com.mysql.cj.jdbc.Driver
 
 Place this file inside the `src` folder.
